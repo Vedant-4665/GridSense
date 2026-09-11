@@ -1,39 +1,53 @@
-import { NavLink, Navigate, Route, Routes } from "react-router-dom";
-import Overview from "./pages/Overview.jsx";
-import Forecast from "./pages/Forecast.jsx";
+import { motion } from "framer-motion";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "./auth/AuthContext.jsx";
+import { BrandMark } from "./components/Brand.jsx";
+import { PlantProvider } from "./components/PlantContext.jsx";
+import Shell from "./components/Shell.jsx";
+import { ToastProvider } from "./components/Toast.jsx";
 import Actions from "./pages/Actions.jsx";
+import AddPlant from "./pages/AddPlant.jsx";
 import AssetHealth from "./pages/AssetHealth.jsx";
-
-const NAV = [
-  { to: "/overview", label: "Overview" },
-  { to: "/forecast", label: "Forecast" },
-  { to: "/actions", label: "Grid actions" },
-  { to: "/assets", label: "Asset health" },
-];
+import AuthPage from "./pages/AuthPage.jsx";
+import Forecast from "./pages/Forecast.jsx";
+import Overview from "./pages/Overview.jsx";
 
 export default function App() {
-  return (
-    <div className="shell">
-      <header className="topbar">
-        <span className="wordmark">GridSense</span>
-        <nav>
-          {NAV.map(({ to, label }) => (
-            <NavLink key={to} to={to} className={({ isActive }) => (isActive ? "active" : "")}>
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-      </header>
+  const { user } = useAuth();
+  if (user === undefined) return <BootScreen />;
 
-      <main>
-        <Routes>
-          <Route path="/" element={<Navigate to="/overview" replace />} />
-          <Route path="/overview" element={<Overview />} />
-          <Route path="/forecast" element={<Forecast />} />
-          <Route path="/actions" element={<Actions />} />
-          <Route path="/assets" element={<AssetHealth />} />
-        </Routes>
-      </main>
+  const app = (
+    <PlantProvider>
+      <ToastProvider>
+        <Shell />
+      </ToastProvider>
+    </PlantProvider>
+  );
+
+  return (
+    <Routes>
+      <Route path="/login" element={user ? <Navigate to="/overview" replace /> : <AuthPage mode="login" />} />
+      <Route path="/register" element={user ? <Navigate to="/overview" replace /> : <AuthPage mode="register" />} />
+      <Route element={user ? app : <Navigate to="/login" replace />}>
+        <Route path="/overview" element={<Overview />} />
+        <Route path="/forecast" element={<Forecast />} />
+        <Route path="/actions" element={<Actions />} />
+        <Route path="/assets" element={<AssetHealth />} />
+        <Route path="/plants/new" element={<AddPlant />} />
+      </Route>
+      <Route path="*" element={<Navigate to={user ? "/overview" : "/login"} replace />} />
+    </Routes>
+  );
+}
+
+// Shown for the moment it takes /api/auth/me to answer.
+function BootScreen() {
+  return (
+    <div className="boot">
+      <div className="backdrop" aria-hidden="true" />
+      <motion.div animate={{ opacity: [0.35, 1, 0.35] }} transition={{ repeat: Infinity, duration: 1.6 }}>
+        <BrandMark size={48} />
+      </motion.div>
     </div>
   );
 }

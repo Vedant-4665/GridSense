@@ -1,20 +1,18 @@
 import { useEffect, useState } from "react";
 
-// Small hook so every page handles loading and failure the same way.
+// Small hook so every page handles loading and failure the same way. Keeps the
+// previous data while refetching, so a refresh never flashes an empty page.
 export function useApi(fn, deps = []) {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState({ data: null, error: null, loading: true });
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+    setState((s) => ({ ...s, loading: true, error: null }));
     fn()
-      .then((d) => alive && setData(d))
-      .catch((e) => alive && setError(e))
-      .finally(() => alive && setLoading(false));
+      .then((data) => alive && setState({ data, error: null, loading: false }))
+      .catch((error) => alive && setState((s) => ({ ...s, error, loading: false })));
     return () => { alive = false; };
   }, deps);
 
-  return { data, error, loading };
+  return state;
 }

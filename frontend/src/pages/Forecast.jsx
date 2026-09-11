@@ -1,44 +1,80 @@
+import { motion } from "framer-motion";
 import { useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../api/client.js";
+import ForecastChart, { ChartLegend } from "../components/ForecastChart.jsx";
+import PageHeader from "../components/PageHeader.jsx";
+import Panel from "../components/Panel.jsx";
+import { usePlants } from "../components/PlantContext.jsx";
+import Segmented from "../components/Segmented.jsx";
+import { ErrorState, PageSkeleton } from "../components/States.jsx";
 import { useApi } from "../components/useApi.js";
+import { useBand } from "../components/useBand.js";
+import WhatIf from "../components/WhatIf.jsx";
+import { BLOCK_HOURS, joinBlocks, maxBy, sum } from "../lib/blocks.js";
+import { dayShort, energy, hhmm, pct, power } from "../lib/format.js";
+import { rise } from "../lib/motion.js";
 
-const HORIZONS = [24, 48, 72];
+const HORIZONS = [["24", "24h"], ["48", "48h"], ["72", "72h"]];
 
 export default function Forecast() {
-  const [horizon, setHorizon] = useState(24);
-  const { data, error, loading } = useApi(() => api.forecast(1, horizon), [horizon]);
+  const { plant, version } = usePlants();
+  const band = useBand(plant.plant_type);
+  const [horizon, setHorizon] = useState("48");
+  const { data, error } = useApi(() => Promise.all([
+    api.forecast(plant.id, Number(horizon)), api.recommendations(plant.id), api.generation(plant.id, 48),
+  ]), [plant.id, horizon, version]);
 
-  if (loading) return <p>Loading forecast…</p>;
-  if (error) return <p className="error">Forecast unavailable. Is the API running on port 5000?</p>;
+  if (error) return <ErrorState error={error} />;
+  if (!data) return <PageSkeleton />;
 
-  const blocks = data.blocks.map((b) => ({
-    time: b.target_timestamp.slice(5, 16).replace("T", " "),
-    predicted: b.predicted_kw,
-    scheduled: b.scheduled_kw,
-  }));
+  const [forecast, recs, generation] = data;
+  const blocks = joinBlocks(forecast, recs);
+  const withSchedule = blocks.filter((b) => b.scheduled_kw != null);
+  const forecastKwh = sum(blocks, (b) => b.predicted_kw * BLOCK_HOURS);
+  const scheduledKwh = sum(withSchedule, (b) => b.scheduled_kw * BLOCK_HOURS);
+  const gapKwh = sum(withSchedule, (b) => (b.predicted_kw - b.scheduled_kw) * BLOCK_HOURS);
+  const peak = maxBy(blocks, (b) => b.predicted_kw);
+  const worst = maxBy(blocks.filter((b) => b.rec), (b) => b.rec.exposure_inr);
+
+  const stats = [
+    ["Forecast energy", energy(forecastKwh), `next ${horizon} hours`],
+    ["Declared schedule", withSchedule.length ? energy(scheduledKwh) : "—",
+      withSchedule.length ? `${withSchedule.length} blocks on file` : "none on file"],
+    ["Net gap", withSchedule.length ? energy(gapKwh) : "—",
+      scheduledKwh ? `${pct((gapKwh / scheduledKwh) * 100)} of schedule` : ""],
+    ["Peak output", peak ? power(peak.predicted_kw, plant.capacity_kw) : "—",
+      peak ? `${dayShort(peak.t)} ${hhmm(peak.t)}` : ""],
+  ];
 
   return (
-    <section>
-      <h1>Forecast</h1>
-      <div className="horizon-toggle">
-        {HORIZONS.map((h) => (
-          <button key={h} onClick={() => setHorizon(h)} className={h === horizon ? "active" : ""}>
-            {h}h
-          </button>
+    <div className="page">
+      <PageHeader eyebrow="Forecast" title="Generation outlook"
+        meta="Gradient-boosted trees on forecast weather and calendar features, fed by Open-Meteo on every run."
+        aside={<Segmented id="horizon" options={HORIZONS} value={horizon} onChange={setHorizon} />} />
+
+      <Panel title={`Next ${horizon} hours`} meta={`${blocks.length} settlement blocks`}
+        actions={<ChartLegend band={band} />} delay={0.05}>
+        <ForecastChart blocks={blocks} actuals={generation} band={band} capacityKw={plant.capacity_kw} height={420} />
+      </Panel>
+
+      <div className="stat-strip">
+        {stats.map(([label, value, sub], i) => (
+          <motion.div className="stat" key={label} {...rise(0.1 + i * 0.05)}>
+            <span>{label}</span>
+            <strong className="num">{value}</strong>
+            <small>{sub}</small>
+          </motion.div>
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={320}>
-        <LineChart data={blocks}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="time" minTickGap={40} />
-          <YAxis unit=" kW" width={80} />
-          <Tooltip />
-          <Line type="monotone" dataKey="predicted" dot={false} strokeWidth={2} />
-          <Line type="monotone" dataKey="scheduled" dot={false} strokeDasharray="4 4" />
-        </LineChart>
-      </ResponsiveContainer>
-    </section>
+      <Panel title="Costing sandbox" delay={0.2}
+        meta="The exact arithmetic behind every rupee on this dashboard, computed live by the API. Drag to test it.">
+        <WhatIf key={plant.id} initial={{
+          plantType: plant.plant_type,
+          scheduled: worst ? Math.round(worst.scheduled_kw * BLOCK_HOURS) : undefined,
+          forecast: worst ? Math.round(worst.predicted_kw * BLOCK_HOURS) : undefined,
+        }} />
+      </Panel>
+    </div>
   );
 }
