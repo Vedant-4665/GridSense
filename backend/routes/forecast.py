@@ -1,8 +1,9 @@
+import requests
 from flask import Blueprint, jsonify, request
 
 import config
 from models import Forecast, Plant, Recommendation, get_session
-from services import costing
+from services import costing, pipeline
 
 bp = Blueprint("forecast", __name__, url_prefix="/api")
 
@@ -50,5 +51,23 @@ def costing_preview():
 
 @bp.post("/forecast/run")
 def run_forecast():
-    # TODO(hackathon): load model, pull weather, write Forecast + Recommendation rows.
-    return jsonify({"status": "not_implemented"}), 501
+    """
+    Regenerate the plant's next 72 hours of forecast blocks from live weather
+    and re-cost them. Uses the model saved by `python seed.py --train`.
+    """
+    plant_id = (request.get_json(silent=True) or {}).get("plant_id")
+    if not isinstance(plant_id, int):
+        return jsonify({"error": "plant_id is required"}), 400
+
+    with get_session() as s:
+        plant = s.get(Plant, plant_id)
+        if not plant:
+            return jsonify({"error": "Plant not found"}), 404
+        try:
+            summary = pipeline.run_forecast(s, plant)
+        except FileNotFoundError as exc:
+            return jsonify({"error": str(exc)}), 503
+        except requests.RequestException as exc:
+            return jsonify({"error": f"Weather forecast unavailable: {exc}"}), 502
+        s.commit()
+        return jsonify(summary)

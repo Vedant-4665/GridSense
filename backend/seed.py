@@ -3,6 +3,7 @@ Rebuild the database from scratch. One command, always.
 
     python seed.py            # demo data only
     python seed.py --csv      # load real CSVs from ../data/raw/
+    python seed.py --train    # then train the forecast model on what was loaded
 
 When the database gets into a bad state at 3am, run this rather than debugging it.
 """
@@ -16,7 +17,7 @@ from models import (
     Asset, DeviationAlert, Forecast, GenerationReading, Plant,
     Recommendation, WeatherReading, Base, engine, get_session, init_db,
 )
-from services import costing
+from services import forecaster, pipeline
 
 random.seed(42)
 
@@ -94,28 +95,16 @@ def seed_demo():
                 plant_id=utility.id, target_timestamp=t,
                 horizon_hours=int((t - now).total_seconds() // 3600),
                 predicted_kw=predicted, scheduled_kw=scheduled,
-                confidence_low=predicted * 0.92, confidence_high=predicted * 1.08,
+                confidence_low=predicted * (1 - config.CONFIDENCE_BAND),
+                confidence_high=predicted * (1 + config.CONFIDENCE_BAND),
             ))
 
             # Cost the block, and record a recommendation where the band is breached.
             if scheduled > 0:
-                hours = config.BLOCK_MINUTES / 60
-                result = costing.block_exposure(
-                    scheduled_kwh=scheduled * hours,
-                    forecast_kwh=predicted * hours,
-                    plant_type="solar",
-                )
-                if result["breached"]:
-                    action, message = costing.recommend_action(result)
-                    s.add(Recommendation(
-                        plant_id=utility.id, window_start=t,
-                        window_end=t + timedelta(minutes=config.BLOCK_MINUTES),
-                        window_type=result["direction"], action_type=action,
-                        severity=costing.severity_for(result["deviation_pct"]),
-                        deviation_pct=result["deviation_pct"],
-                        expected_delta_kwh=result.get("chargeable_units"),
-                        exposure_inr=result["exposure_inr"], message=message,
-                    ))
+                rec = pipeline.recommendation_for(utility, t, scheduled_kw=scheduled,
+                                                  predicted_kw=predicted)
+                if rec:
+                    s.add(rec)
             t += timedelta(minutes=config.BLOCK_MINUTES)
 
         # --- one seeded deviation alert on inverter 3 ----------------------
@@ -132,13 +121,25 @@ def seed_demo():
               f"{s.query(Recommendation).count()} recommendations.")
 
 
+def train_model():
+    frame = pipeline.training_frame()
+    _, m = forecaster.train(frame)
+    print(f"Model trained on {len(frame)} blocks, saved to {config.MODEL_PATH.relative_to(config.BASE_DIR)}.")
+    print(f"Held-out MAE {m['mae']:,.1f} kW vs day-ahead persistence baseline "
+          f"{m['baseline_mae']:,.1f} kW: {m['improvement_pct']}% improvement "
+          f"over {m['test_blocks']} blocks.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", action="store_true", help="load real CSVs from data/raw/")
+    parser.add_argument("--train", action="store_true", help="train and save the forecast model")
     args = parser.parse_args()
 
     reset()
     seed_demo()
     if args.csv:
         print("TODO(hackathon): wire services.ingest.load_generation_csv here.")
+    if args.train:
+        train_model()
     print("Done. Start the API with: python app.py")

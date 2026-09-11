@@ -23,7 +23,7 @@ cd backend
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python seed.py                  # builds the database from scratch
+python seed.py --train          # builds the database from scratch, trains the model
 python app.py                   # serves on http://localhost:5000
 ```
 
@@ -66,6 +66,7 @@ backend/
     forecaster.py   train, evaluate, predict
     costing.py      deviation exposure arithmetic
     deviation.py    forecast-gap diagnostic
+    pipeline.py     forecast run: weather -> blocks -> forecasts + costed actions
   ml/features.py    feature engineering
 
 frontend/

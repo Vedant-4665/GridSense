@@ -33,3 +33,11 @@ DEFAULT_RETAIL_TARIFF = 8.0
 
 FORECAST_HORIZONS = [24, 48, 72]
 BLOCK_MINUTES = 15
+
+# Forecast uncertainty band as a fraction of predicted output. A flat
+# placeholder until the model produces its own intervals.
+CONFIDENCE_BAND = 0.08
+
+# Nominal operating cell temperature of a typical crystalline module (deg C),
+# used to estimate module temperature from forecast weather.
+MODULE_NOCT_C = 45.0
