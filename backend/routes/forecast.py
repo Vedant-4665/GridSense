@@ -2,7 +2,8 @@ import requests
 from flask import Blueprint, jsonify, request
 
 import config
-from models import Forecast, Plant, Recommendation, get_session
+from models import Forecast, Recommendation, get_session
+from routes.auth import can_act_on, visible_plant
 from services import costing, pipeline
 
 bp = Blueprint("forecast", __name__, url_prefix="/api")
@@ -15,6 +16,8 @@ def get_forecast(plant_id):
         return jsonify({"error": f"horizon must be one of {config.FORECAST_HORIZONS}"}), 400
 
     with get_session() as s:
+        if not visible_plant(s, plant_id):
+            return jsonify({"error": "Plant not found"}), 404
         rows = (s.query(Forecast)
                  .filter_by(plant_id=plant_id)
                  .order_by(Forecast.target_timestamp)
@@ -27,6 +30,8 @@ def get_forecast(plant_id):
 def recommendations(plant_id):
     """Ranked by financial impact, not by severity label."""
     with get_session() as s:
+        if not visible_plant(s, plant_id):
+            return jsonify({"error": "Plant not found"}), 404
         rows = (s.query(Recommendation)
                  .filter_by(plant_id=plant_id)
                  .order_by(Recommendation.exposure_inr.desc()).all())
@@ -60,9 +65,13 @@ def run_forecast():
         return jsonify({"error": "plant_id is required"}), 400
 
     with get_session() as s:
-        plant = s.get(Plant, plant_id)
+        plant = visible_plant(s, plant_id)
         if not plant:
             return jsonify({"error": "Plant not found"}), 404
+        if not can_act_on(plant):
+            return jsonify({"error": "Only the plant's owner can run its forecast"}), 403
+        if plant.plant_type != "solar":
+            return jsonify({"error": "Forecasting is solar-only for now"}), 422
         try:
             summary = pipeline.run_forecast(s, plant)
         except FileNotFoundError as exc:

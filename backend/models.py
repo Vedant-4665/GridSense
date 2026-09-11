@@ -1,4 +1,5 @@
 """SQLAlchemy models. One table per concept described in the ideation document."""
+import secrets
 from datetime import datetime, timezone
 
 from sqlalchemy import (
@@ -17,9 +18,48 @@ def _now():
     return datetime.now(timezone.utc)
 
 
+# Customer roles. Owners see and act on their own plants; grid operators and
+# traders see every plant, read-only.
+ROLES = {
+    "plant_owner": "Renewable plant owner",
+    "utility": "Utility company",
+    "grid_operator": "Grid operator",
+    "trader": "Energy trader",
+}
+OWNER_ROLES = {"plant_owner", "utility"}
+
+
+def new_session_token():
+    return secrets.token_hex(16)
+
+
+class User(Base):
+    """A customer account."""
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    email = Column(String(254), nullable=False, unique=True, index=True)
+    password_hash = Column(String(255), nullable=False)
+    name = Column(String(120), nullable=False)
+    organisation = Column(String(120))
+    role = Column(String(24), nullable=False)   # see ROLES
+    # Copied into the session cookie and checked on every request. Rotating it
+    # on logout invalidates every cookie ever issued to this user.
+    session_token = Column(String(32), nullable=False, default=new_session_token)
+    created_at = Column(DateTime, default=_now)
+
+    plants = relationship("Plant", back_populates="owner")
+
+    def to_dict(self):
+        return {
+            "id": self.id, "email": self.email, "name": self.name,
+            "organisation": self.organisation, "role": self.role,
+        }
+
+
 class Plant(Base):
     __tablename__ = "plants"
     id = Column(Integer, primary_key=True)
+    owner_id = Column(Integer, ForeignKey("users.id"), index=True)
     name = Column(String(120), nullable=False)
     location = Column(String(120))
     latitude = Column(Float, nullable=False)
@@ -29,6 +69,7 @@ class Plant(Base):
     owner_type = Column(String(16), nullable=False, default="utility")  # utility | distributed
     tariff_rate = Column(Float, default=config.DEFAULT_RETAIL_TARIFF)
 
+    owner = relationship("User", back_populates="plants")
     assets = relationship("Asset", back_populates="plant")
 
     def to_dict(self):

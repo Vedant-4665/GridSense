@@ -10,12 +10,16 @@ When the database gets into a bad state at 3am, run this rather than debugging i
 import argparse
 import math
 import random
+import secrets
 from datetime import datetime, timedelta
+
+from werkzeug.security import generate_password_hash
 
 import config
 from models import (
-    Asset, DeviationAlert, Forecast, GenerationReading, Plant,
-    Recommendation, WeatherReading, Base, engine, get_session, init_db,
+    ROLES, Asset, DeviationAlert, Forecast, GenerationReading, Plant,
+    Recommendation, User, WeatherReading, Base, engine, get_session, init_db,
+    new_session_token,
 )
 from services import forecaster, pipeline
 
@@ -35,18 +39,36 @@ def solar_curve(hour: float, capacity_kw: float) -> float:
     return capacity_kw * math.sin(math.pi * (hour - 6) / 12) ** 1.4
 
 
+def seed_demo_users(s) -> dict:
+    """
+    One account per role, for POST /api/auth/demo. Their passwords are random
+    and never shown, so the demo login is the only way in.
+    """
+    users = {
+        role: User(email=config.DEMO_EMAIL.format(role=role), name=f"{label} (demo)",
+                   organisation="GridSense demo", role=role,
+                   password_hash=generate_password_hash(secrets.token_urlsafe(32)),
+                   session_token=new_session_token())
+        for role, label in ROLES.items()
+    }
+    s.add_all(users.values())
+    s.flush()
+    return users
+
+
 def seed_demo():
     with get_session() as s:
+        demo = seed_demo_users(s)
         utility = Plant(
             name="Ahmedabad Solar Park", location="Gujarat, India",
             latitude=23.0225, longitude=72.5714, capacity_kw=50000,
-            plant_type="solar", owner_type="utility",
+            plant_type="solar", owner_type="utility", owner_id=demo["utility"].id,
         )
         rooftop = Plant(
             name="Rooftop 3kW (demo)", location="Ahmedabad, India",
             latitude=23.0225, longitude=72.5714, capacity_kw=3,
             plant_type="solar", owner_type="distributed",
-            tariff_rate=config.DEFAULT_RETAIL_TARIFF,
+            tariff_rate=config.DEFAULT_RETAIL_TARIFF, owner_id=demo["plant_owner"].id,
         )
         s.add_all([utility, rooftop])
         s.flush()
@@ -116,7 +138,8 @@ def seed_demo():
         ))
 
         s.commit()
-        print(f"Seeded {s.query(GenerationReading).count()} generation readings, "
+        print(f"Seeded {s.query(User).count()} demo accounts, "
+              f"{s.query(GenerationReading).count()} generation readings, "
               f"{s.query(Forecast).count()} forecast blocks, "
               f"{s.query(Recommendation).count()} recommendations.")
 

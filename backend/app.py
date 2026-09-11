@@ -1,17 +1,28 @@
 """GridSense API entry point."""
+from datetime import timedelta
+
 from flask import Flask, jsonify
 from flask_cors import CORS
 
+import config
 from models import init_db
-from routes import alerts, dashboard, forecast, plants
+from routes import alerts, auth, dashboard, forecast, plants
 
 
 def create_app():
     app = Flask(__name__)
+    app.config.update(
+        SECRET_KEY=config.SECRET_KEY,
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE=config.SESSION_COOKIE_SECURE,
+        PERMANENT_SESSION_LIFETIME=timedelta(days=config.SESSION_DAYS),
+    )
     CORS(app)
     init_db()
 
-    for module in (plants, forecast, alerts, dashboard):
+    app.before_request(auth.require_login)
+    for module in (auth, plants, forecast, alerts, dashboard):
         app.register_blueprint(module.bp)
 
     @app.get("/api/health")

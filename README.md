@@ -41,6 +41,22 @@ Vite proxies `/api/*` to port 5000, so no CORS configuration is needed in develo
 
 ---
 
+## Accounts
+
+Everything under `/api` except `/api/health` and `/api/auth/*` needs a login.
+The session is an HttpOnly cookie; see `docs/api-contract.md`.
+
+- **Roles.** Plant owners and utilities see and act on their own plants. Grid
+  operators and energy traders see every plant, read-only.
+- **Demo.** `seed.py` creates one demo account per role, reachable only through
+  the login page's demo buttons (`POST /api/auth/demo`). Set `DEMO_LOGIN=0` to
+  turn them off.
+- **Secret key.** Put `SECRET_KEY=...` in `backend/.env` for anything beyond
+  local development. Without it, a random key is generated into
+  `backend/.secret_key` (gitignored).
+
+---
+
 ## If the database breaks
 
 ```bash
@@ -48,7 +64,7 @@ cd backend && python seed.py
 ```
 
 Rebuilds everything from scratch. Do this rather than debugging database state
-under time pressure.
+under time pressure. It also deletes every registered account.
 
 ---
 
@@ -60,7 +76,7 @@ backend/
   config.py         every tunable number, including regulatory parameters
   models.py         SQLAlchemy models — 7 tables
   seed.py           one-command database rebuild
-  routes/           plants, forecast, alerts, dashboard
+  routes/           auth (accounts + access rules), plants, forecast, alerts, dashboard
   services/
     ingest.py       CSV loading + Open-Meteo client
     forecaster.py   train, evaluate, predict

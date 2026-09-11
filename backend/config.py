@@ -1,10 +1,15 @@
 """Central configuration. Keep every tunable number here, not scattered in code."""
 import os
+import secrets
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR.parent / "data"
 MODEL_PATH = BASE_DIR / "ml" / "model.pkl"
+
+load_dotenv(BASE_DIR / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'gridsense.sqlite3'}")
 
@@ -41,3 +46,24 @@ CONFIDENCE_BAND = 0.08
 # Nominal operating cell temperature of a typical crystalline module (deg C),
 # used to estimate module temperature from forecast weather.
 MODULE_NOCT_C = 45.0
+
+
+# --- Auth ------------------------------------------------------------------
+def _dev_secret_key() -> str:
+    """Random key kept beside the code, so logins survive restarts in development."""
+    path = BASE_DIR / ".secret_key"
+    if not path.exists():
+        path.write_text(secrets.token_hex(32))
+    return path.read_text().strip()
+
+
+# Signs the session cookie. Set SECRET_KEY in the environment for any real deployment.
+SECRET_KEY = os.getenv("SECRET_KEY") or _dev_secret_key()
+# Cookie over HTTPS only. Turn on wherever the app is served over TLS.
+SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE") == "1"
+SESSION_DAYS = 7
+MIN_PASSWORD_LENGTH = 8
+
+# One-click demo accounts, one per role, created by seed.py. Turn off for real customers.
+DEMO_LOGIN = os.getenv("DEMO_LOGIN", "1") == "1"
+DEMO_EMAIL = "{role}@demo.gridsense.test"
