@@ -29,6 +29,10 @@ python app.py                   # serves on http://localhost:5000
 
 Check it: `curl localhost:5000/api/health`
 
+**macOS:** AirPlay Receiver holds port 5000. Either turn it off (System Settings →
+General → AirDrop & Handoff), or start both servers with another port:
+`API_PORT=5001 python app.py` and `API_PORT=5001 npm run dev`.
+
 ### Frontend
 
 ```bash

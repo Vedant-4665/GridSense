@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import requests
 from flask import Blueprint, jsonify, request
 
@@ -15,11 +17,13 @@ def get_forecast(plant_id):
     if horizon not in config.FORECAST_HORIZONS:
         return jsonify({"error": f"horizon must be one of {config.FORECAST_HORIZONS}"}), 400
 
+    # Blocks still to settle: the one in progress onwards.
+    since = datetime.now() - timedelta(minutes=config.BLOCK_MINUTES)
     with get_session() as s:
         if not visible_plant(s, plant_id):
             return jsonify({"error": "Plant not found"}), 404
         rows = (s.query(Forecast)
-                 .filter_by(plant_id=plant_id)
+                 .filter(Forecast.plant_id == plant_id, Forecast.target_timestamp > since)
                  .order_by(Forecast.target_timestamp)
                  .limit(horizon * 4).all())
         return jsonify({"plant_id": plant_id, "horizon_hours": horizon,

@@ -13,6 +13,9 @@ load_dotenv(BASE_DIR / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'gridsense.sqlite3'}")
 
+# The Vite proxy reads the same variable. On macOS, AirPlay Receiver holds 5000.
+API_PORT = int(os.getenv("API_PORT", "5000"))
+
 # Open-Meteo needs no API key.
 WEATHER_API_URL = "https://api.open-meteo.com/v1/forecast"
 

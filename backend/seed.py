@@ -34,7 +34,9 @@ def reset():
 
 def solar_curve(hour: float, capacity_kw: float) -> float:
     """Simple clear-sky bell between 06:00 and 18:00."""
-    if hour < 6 or hour > 18:
+    # Exactly zero at the edges: sin(pi) is 1e-16, not 0, and a near-zero
+    # schedule gets costed as a 100% deviation.
+    if hour <= 6 or hour >= 18:
         return 0.0
     return capacity_kw * math.sin(math.pi * (hour - 6) / 12) ** 1.4
 

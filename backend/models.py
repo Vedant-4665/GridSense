@@ -18,6 +18,11 @@ def _now():
     return datetime.now(timezone.utc)
 
 
+def _round(value, digits=2):
+    """Round for JSON. Keeps 0.0 as 0.0, where a truthiness check would turn it into null."""
+    return round(value, digits) if value is not None else None
+
+
 # Customer roles. Owners see and act on their own plants; grid operators and
 # traders see every plant, read-only.
 ROLES = {
@@ -141,10 +146,10 @@ class Forecast(Base):
     def to_dict(self):
         return {
             "target_timestamp": self.target_timestamp.isoformat(),
-            "predicted_kw": round(self.predicted_kw, 2),
-            "scheduled_kw": round(self.scheduled_kw, 2) if self.scheduled_kw else None,
-            "confidence_low": round(self.confidence_low, 2) if self.confidence_low else None,
-            "confidence_high": round(self.confidence_high, 2) if self.confidence_high else None,
+            "predicted_kw": _round(self.predicted_kw),
+            "scheduled_kw": _round(self.scheduled_kw),
+            "confidence_low": _round(self.confidence_low),
+            "confidence_high": _round(self.confidence_high),
             "horizon_hours": self.horizon_hours,
         }
 
@@ -171,9 +176,9 @@ class Recommendation(Base):
             "window_end": self.window_end.isoformat(),
             "window_type": self.window_type, "action_type": self.action_type,
             "severity": self.severity,
-            "deviation_pct": round(self.deviation_pct, 2) if self.deviation_pct else None,
-            "expected_delta_kwh": round(self.expected_delta_kwh, 2) if self.expected_delta_kwh else None,
-            "exposure_inr": round(self.exposure_inr, 2) if self.exposure_inr else None,
+            "deviation_pct": _round(self.deviation_pct),
+            "expected_delta_kwh": _round(self.expected_delta_kwh),
+            "exposure_inr": _round(self.exposure_inr),
             "message": self.message,
         }
 
@@ -199,10 +204,10 @@ class DeviationAlert(Base):
             "detected_at": self.detected_at.isoformat() if self.detected_at else None,
             "window_start": self.window_start.isoformat() if self.window_start else None,
             "window_end": self.window_end.isoformat() if self.window_end else None,
-            "deviation_pct": round(self.deviation_pct, 2) if self.deviation_pct else None,
+            "deviation_pct": _round(self.deviation_pct),
             "suspected_cause": self.suspected_cause, "severity": self.severity,
-            "est_loss_kwh": round(self.est_loss_kwh, 2) if self.est_loss_kwh else None,
-            "est_revenue_loss": round(self.est_revenue_loss, 2) if self.est_revenue_loss else None,
+            "est_loss_kwh": _round(self.est_loss_kwh),
+            "est_revenue_loss": _round(self.est_revenue_loss),
             "status": self.status,
         }
 
