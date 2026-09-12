@@ -63,6 +63,41 @@ health, expected monthly bill savings, and the best window to run appliances.
 
 ---
 
+## Tests
+
+```bash
+cd backend && ./venv/bin/pytest tests -q
+```
+
+67 tests covering login and roles, plant validation and idempotency, the
+costing arithmetic (including the worked example from the ideation), forecast
+and diagnostic rules, weather failures, and the read-only summaries. They run
+against a throwaway database and never touch the network.
+
+---
+
+## If HTTPS is being intercepted
+
+On networks that inspect TLS — many campus, office and VPN setups — Python
+refuses the weather service even though the browser is fine:
+
+```
+SSLError: certificate verify failed: self-signed certificate in certificate chain
+```
+
+The backend now verifies through the operating system's trust store
+(`truststore`), which is where such a root usually lives, so this normally
+resolves itself. If it persists, point the app at the certificate:
+
+```bash
+REQUESTS_CA_BUNDLE=/path/to/your-network-root.pem python app.py
+```
+
+Nothing else breaks meanwhile: seeded forecasts still render, and the failure
+says what to do instead of showing a stack trace.
+
+---
+
 ## Accounts
 
 Everything under `/api` except `/api/health` and `/api/auth/*` needs a login.

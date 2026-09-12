@@ -22,7 +22,9 @@ def current():
 
     try:
         return jsonify(ingest.fetch_current_weather(latitude, longitude))
+    except requests.exceptions.SSLError:
+        return jsonify({"error": "This network is inspecting HTTPS, so the weather service can't be verified. Trust your network's certificate, set REQUESTS_CA_BUNDLE to it, or switch networks."}), 502
     except requests.RequestException as exc:
-        return jsonify({"error": f"Weather service unavailable: {exc}"}), 502
+        return jsonify({"error": f"Weather service unreachable: {type(exc).__name__}"}), 502
     except (KeyError, ValueError) as exc:
         return jsonify({"error": f"Weather service returned something unexpected: {exc}"}), 502

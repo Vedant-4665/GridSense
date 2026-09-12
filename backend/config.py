@@ -21,6 +21,10 @@ API_PORT = int(os.getenv("API_PORT", "5000"))
 # Open-Meteo needs no API key.
 WEATHER_API_URL = "https://api.open-meteo.com/v1/forecast"
 
+# Point this at your network's root certificate (PEM) if it inspects HTTPS and
+# the system trust store isn't enough. True means "use the normal trust chain".
+CA_BUNDLE = os.getenv("REQUESTS_CA_BUNDLE") or os.getenv("WEATHER_CA_BUNDLE") or True
+
 # --- Regulatory parameters -------------------------------------------------
 # Deviation tolerance bands, as a fraction of scheduled generation.
 # CERC DSM (Third Amendment) Regulations 2026, in force 31 Aug 2026.

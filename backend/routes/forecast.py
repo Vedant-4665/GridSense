@@ -82,7 +82,9 @@ def run_forecast():
             summary = pipeline.run_forecast(s, plant)
         except FileNotFoundError as exc:
             return jsonify({"error": str(exc)}), 503
+        except requests.exceptions.SSLError:
+            return jsonify({"error": "This network is inspecting HTTPS, so the weather service can't be verified. Trust your network's certificate, set REQUESTS_CA_BUNDLE to it, or switch networks."}), 502
         except requests.RequestException as exc:
-            return jsonify({"error": f"Weather forecast unavailable: {exc}"}), 502
+            return jsonify({"error": f"Weather service unreachable: {type(exc).__name__}"}), 502
         s.commit()
         return jsonify(summary)

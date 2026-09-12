@@ -11,6 +11,7 @@ import AddPlant from "./pages/AddPlant.jsx";
 import AssetHealth from "./pages/AssetHealth.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
 import Forecast from "./pages/Forecast.jsx";
+import Home from "./pages/Home.jsx";
 import Insights from "./pages/Insights.jsx";
 import Overview from "./pages/Overview.jsx";
 
@@ -29,6 +30,8 @@ export default function App() {
 
   return (
     <Routes>
+      {/* The front door. Signed-in visitors go straight to their plants. */}
+      <Route path="/" element={user ? <Navigate to="/overview" replace /> : <Home />} />
       <Route path="/login" element={user ? <Navigate to="/overview" replace /> : <AuthPage mode="login" />} />
       <Route path="/register" element={user ? <Navigate to="/overview" replace /> : <AuthPage mode="register" />} />
       <Route element={user ? app : <Navigate to="/login" replace />}>
@@ -39,7 +42,7 @@ export default function App() {
         <Route path="/insights" element={<Insights />} />
         <Route path="/plants/new" element={<AddPlant />} />
       </Route>
-      <Route path="*" element={<Navigate to={user ? "/overview" : "/login"} replace />} />
+      <Route path="*" element={<Navigate to={user ? "/overview" : "/"} replace />} />
     </Routes>
   );
 }

@@ -7,6 +7,24 @@ import requests
 import config
 
 
+def _use_system_trust():
+    """
+    Networks that inspect HTTPS — plenty of campus, office and VPN setups —
+    present their own root certificate. The machine trusts it (the browser is
+    fine), but Python ships its own CA bundle and refuses the connection. This
+    hands verification to the operating system's trust store, where that root
+    already lives, and does nothing when truststore isn't installed.
+    """
+    try:
+        import truststore
+        truststore.inject_into_ssl()
+    except Exception:                                    # noqa: BLE001 - never fatal
+        pass
+
+
+_use_system_trust()
+
+
 def discover_plant_csvs(folder) -> list:
     """(generation, weather) CSV pairs in the standard plant-export layout."""
     pairs = []
@@ -48,7 +66,7 @@ def fetch_forecast_weather(lat: float, lon: float, hours: int = 72) -> pd.DataFr
         "forecast_days": max(1, min(7, hours // 24 + 2)),
         "timezone": "GMT",
     }
-    resp = requests.get(config.WEATHER_API_URL, params=params, timeout=15)
+    resp = requests.get(config.WEATHER_API_URL, params=params, timeout=15, verify=config.CA_BUNDLE)
     resp.raise_for_status()
     hourly = resp.json()["hourly"]
 
@@ -77,7 +95,7 @@ def fetch_current_weather(lat: float, lon: float) -> dict:
         "wind_speed_unit": "ms",
         "timezone": "auto",
     }
-    resp = requests.get(config.WEATHER_API_URL, params=params, timeout=10)
+    resp = requests.get(config.WEATHER_API_URL, params=params, timeout=10, verify=config.CA_BUNDLE)
     resp.raise_for_status()
     payload = resp.json()
     current = payload["current"]
