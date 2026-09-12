@@ -96,6 +96,18 @@ are optional, defaults in brackets. Returns `201` with the plant, shaped as in
 `GET /api/plants`. A new plant has no history or schedule: its forecast runs,
 but its blocks come back unscheduled and uncosted.
 
+**Send an `Idempotency-Key` header.** A repeat of the same key from the same
+owner returns the plant the first request created, with `200` instead of `201`,
+so a retry after a lost response never makes a second plant. The key is unique
+per owner in the database, so simultaneous retries settle the same way.
+
+Rules the server enforces, whatever the client checked: `name` is required,
+trimmed, stripped of control characters and at most 120 characters (`location`
+likewise); `latitude`, `longitude` and `capacity_kw` must be real numbers —
+`NaN` and `Infinity` are refused — inside ±90, ±180 and `0 < kW < 10,000,000`;
+coordinates are stored to 6 decimal places. Bodies over 256 KB are refused
+before they reach a handler.
+
 ## GET /api/plants/:id
 As above, plus `"assets": [...]`.
 
@@ -181,6 +193,20 @@ resolved ones are left alone). Owner roles only. Needs a trained model.
 ```
 Errors: `400` no `plant_id`, `404` unknown plant, `403` not the owner,
 `503` model not trained.
+
+## GET /api/weather/current?latitude=&longitude=
+Conditions at a coordinate right now, straight from Open-Meteo. Used by the
+add-plant screen so a site is more than two numbers; nothing is stored.
+```json
+{
+  "latitude": 27.52, "longitude": 71.96, "observed_at": "2026-09-12T12:00",
+  "timezone": "Asia/Kolkata", "temperature_c": 37.0, "cloud_cover_pct": 11,
+  "wind_speed_ms": 2.12, "irradiance_kw_m2": 0.737, "weather_code": 0
+}
+```
+`observed_at` is the weather service's own timestamp, in the site's local time.
+Errors: `400` missing or out-of-range coordinates, `502` the weather service
+is unreachable or answered with something unexpected.
 
 ## GET /api/model
 Scores from the last training run, plus what the model leans on. Written by

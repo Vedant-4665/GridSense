@@ -1,7 +1,10 @@
+import math
+import unicodedata
 from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
 import config
 from models import OWNER_ROLES, Forecast, GenerationReading, Plant, Recommendation, get_session
@@ -9,6 +12,32 @@ from routes.auth import can_act_on, visible_plant, visible_plants
 from services import pipeline
 
 bp = Blueprint("plants", __name__, url_prefix="/api/plants")
+
+MAX_NAME = 120          # matches Plant.name
+MAX_LOCATION = 120      # matches Plant.location
+COORD_DECIMALS = 6      # ~0.1 m: finer than any plant boundary
+
+
+def _text(value, limit: int):
+    """
+    Trim, normalise and drop control characters, keeping ordinary Unicode.
+    Returns None when nothing is left, or False when it is too long to accept
+    (too long is refused rather than silently truncated).
+    """
+    text = unicodedata.normalize("NFC", str(value if value is not None else ""))
+    text = "".join(ch for ch in text if ch == " " or not unicodedata.category(ch).startswith("C")).strip()
+    if not text:
+        return None
+    return text if len(text) <= limit else False
+
+
+def _finite(value):
+    """A real number, or None for NaN, Infinity, blanks and anything unparseable."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
 
 
 @bp.get("")
@@ -23,28 +52,62 @@ def create_plant():
     if g.user.role not in OWNER_ROLES:
         return jsonify({"error": "Only plant owners and utilities can add plants"}), 403
 
-    body = request.get_json(silent=True) or {}
-    try:
-        plant = Plant(
-            owner_id=g.user.id,
-            name=str(body["name"]).strip(),
-            location=str(body.get("location") or "").strip() or None,
-            latitude=float(body["latitude"]), longitude=float(body["longitude"]),
-            capacity_kw=float(body["capacity_kw"]),
-            plant_type=body.get("plant_type", "solar"),
-            owner_type=body.get("owner_type", "utility"),
-            tariff_rate=float(body.get("tariff_rate", config.DEFAULT_RETAIL_TARIFF)),
-        )
-    except (KeyError, TypeError, ValueError):
-        return jsonify({"error": "name, latitude, longitude and capacity_kw are required"}), 400
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({"error": "Send a JSON object describing the plant"}), 400
 
+    # A retried request carries the key of the one before it. If that request
+    # already created the plant, hand back the same plant instead of a second.
+    key = (request.headers.get("Idempotency-Key") or "").strip()[:64] or None
+    if key:
+        with get_session() as s:
+            already = s.query(Plant).filter_by(owner_id=g.user.id, idempotency_key=key).first()
+            if already:
+                return jsonify(already.to_dict()), 200
+
+    name = _text(body.get("name"), MAX_NAME)
+    location = _text(body.get("location"), MAX_LOCATION)
+    if name is False:
+        return jsonify({"error": f"name must be {MAX_NAME} characters or fewer"}), 400
+    if location is False:
+        return jsonify({"error": f"location must be {MAX_LOCATION} characters or fewer"}), 400
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+
+    latitude, longitude = _finite(body.get("latitude")), _finite(body.get("longitude"))
+    capacity = _finite(body.get("capacity_kw"))
+    tariff = _finite(body.get("tariff_rate", config.DEFAULT_RETAIL_TARIFF))
+    if latitude is None or longitude is None or capacity is None:
+        return jsonify({"error": "latitude, longitude and capacity_kw must be numbers"}), 400
+    if tariff is None:
+        return jsonify({"error": "tariff_rate must be a number"}), 400
+
+    plant = Plant(
+        owner_id=g.user.id, name=name, location=location,
+        latitude=round(latitude, COORD_DECIMALS), longitude=round(longitude, COORD_DECIMALS),
+        capacity_kw=capacity,
+        plant_type=body.get("plant_type", "solar"),
+        owner_type=body.get("owner_type", "utility"),
+        tariff_rate=tariff, idempotency_key=key,
+    )
     error = _invalid(plant)
     if error:
         return jsonify({"error": error}), 400
 
     with get_session() as s:
         s.add(plant)
-        s.commit()
+        try:
+            s.commit()
+        except IntegrityError:
+            # Simultaneous retries of the same creation: one wins, the rest get
+            # the plant it made.
+            s.rollback()
+            if not key:
+                raise
+            already = s.query(Plant).filter_by(owner_id=g.user.id, idempotency_key=key).first()
+            if not already:
+                raise
+            return jsonify(already.to_dict()), 200
         return jsonify(plant.to_dict()), 201
 
 
@@ -74,16 +137,20 @@ def update_plant(plant_id):
             return jsonify({"error": "Only the plant's owner can change its settings"}), 403
 
         if "name" in body:
-            name = str(body["name"]).strip()
+            name = _text(body["name"], MAX_NAME)
+            if name is False:
+                return jsonify({"error": f"name must be {MAX_NAME} characters or fewer"}), 400
             if not name:
                 return jsonify({"error": "name is required"}), 400
             plant.name = name
         if "location" in body:
-            plant.location = str(body["location"] or "").strip() or None
+            location = _text(body["location"], MAX_LOCATION)
+            if location is False:
+                return jsonify({"error": f"location must be {MAX_LOCATION} characters or fewer"}), 400
+            plant.location = location
         if "tariff_rate" in body:
-            try:
-                tariff = float(body["tariff_rate"])
-            except (TypeError, ValueError):
+            tariff = _finite(body["tariff_rate"])
+            if tariff is None:
                 return jsonify({"error": "tariff_rate must be a number"}), 400
             if not 0 < tariff < 100:
                 return jsonify({"error": "tariff_rate must be between 0 and 100 Rs/kWh"}), 400
@@ -93,9 +160,8 @@ def update_plant(plant_id):
             if band is None:          # back to the regulator default
                 plant.band_pct = None
             else:
-                try:
-                    band = float(band)
-                except (TypeError, ValueError):
+                band = _finite(band)
+                if band is None:
                     return jsonify({"error": "band_pct must be a number"}), 400
                 if not 0 <= band <= 100:
                     return jsonify({"error": "band_pct must be between 0 and 100"}), 400
@@ -164,6 +230,8 @@ def _invalid(p: Plant):
     """First validation error for a new plant, or None."""
     if not p.name:
         return "name is required"
+    if len(p.name) > MAX_NAME:
+        return f"name must be {MAX_NAME} characters or fewer"
     if not (-90 <= p.latitude <= 90 and -180 <= p.longitude <= 180):
         return "latitude or longitude is out of range"
     if not 0 < p.capacity_kw < 10_000_000:
@@ -172,4 +240,6 @@ def _invalid(p: Plant):
         return "plant_type must be solar or wind"
     if p.owner_type not in ("utility", "distributed"):
         return "owner_type must be utility or distributed"
+    if not 0 < (p.tariff_rate or 0) < 100:
+        return "tariff_rate must be between 0 and 100 Rs/kWh"
     return None

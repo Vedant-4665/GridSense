@@ -6,7 +6,7 @@ from flask_cors import CORS
 
 import config
 from models import init_db
-from routes import alerts, auth, dashboard, diagnostics, forecast, insights, plants
+from routes import alerts, auth, dashboard, diagnostics, forecast, insights, plants, weather
 
 
 def create_app():
@@ -17,12 +17,14 @@ def create_app():
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_COOKIE_SECURE=config.SESSION_COOKIE_SECURE,
         PERMANENT_SESSION_LIFETIME=timedelta(days=config.SESSION_DAYS),
+        # No endpoint here takes an upload; this stops oversized bodies early.
+        MAX_CONTENT_LENGTH=256 * 1024,
     )
     CORS(app)
     init_db()
 
     app.before_request(auth.require_login)
-    for module in (auth, plants, forecast, alerts, dashboard, diagnostics, insights):
+    for module in (auth, plants, forecast, alerts, dashboard, diagnostics, insights, weather):
         app.register_blueprint(module.bp)
 
     @app.get("/api/health")

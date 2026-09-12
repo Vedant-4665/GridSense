@@ -64,6 +64,37 @@ def fetch_forecast_weather(lat: float, lon: float, hours: int = 72) -> pd.DataFr
     })
 
 
+def fetch_current_weather(lat: float, lon: float) -> dict:
+    """
+    Conditions at a site right now. Same free Open-Meteo service the forecast
+    uses, so nothing here is modelled or invented: `observed_at` is the
+    service's own timestamp, in the site's local time.
+    """
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "current": "temperature_2m,cloud_cover,wind_speed_10m,shortwave_radiation,weather_code",
+        "wind_speed_unit": "ms",
+        "timezone": "auto",
+    }
+    resp = requests.get(config.WEATHER_API_URL, params=params, timeout=10)
+    resp.raise_for_status()
+    payload = resp.json()
+    current = payload["current"]
+    radiation = current.get("shortwave_radiation")
+    return {
+        "latitude": payload.get("latitude"), "longitude": payload.get("longitude"),
+        "observed_at": current.get("time"),
+        "timezone": payload.get("timezone"),
+        "temperature_c": current.get("temperature_2m"),
+        "cloud_cover_pct": current.get("cloud_cover"),
+        "wind_speed_ms": current.get("wind_speed_10m"),
+        # Open-Meteo reports W/m2; the rest of the platform works in kW/m2.
+        "irradiance_kw_m2": None if radiation is None else round(radiation / 1000, 4),
+        "weather_code": current.get("weather_code"),
+    }
+
+
 def interpolate_to_blocks(hourly: pd.DataFrame, start: datetime, hours: int) -> pd.DataFrame:
     """
     Interpolate hourly weather onto settlement blocks from `start`.

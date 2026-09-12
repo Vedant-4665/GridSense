@@ -615,3 +615,93 @@ a { color: inherit; }
 .slabs th, .slabs td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--line); font-size: 13.5px; }
 .slabs th { color: var(--muted); font-size: 12px; font-weight: 600; }
 .slabs td:last-child, .slabs th:last-child { text-align: right; }
+
+/* ---------- Add plant: form, map, readiness ---------- */
+.addplant { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr); gap: 20px; align-items: start; }
+.addplant-form { display: flex; flex-direction: column; gap: 16px; }
+.addplant-rail { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 84px; }
+.addplant .panel-title { font-size: 15px; }
+
+.presets { margin: 0 0 16px; padding: 0; border: 0; }
+.presets legend { padding: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.chip.is-selected {
+  border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); font-weight: 600;
+}
+.chip.is-selected svg { color: var(--accent); }
+
+.field.has-error .field-box { border-color: var(--red); }
+.field.has-error .field-box:focus-within { box-shadow: 0 0 0 4px var(--red-soft); }
+.field-error { display: flex; align-items: center; gap: 6px; color: var(--red); font-size: 12.5px; }
+
+/* Map: fixed height, never the loudest thing on the page. */
+.sitemap { position: relative; margin-top: 4px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
+.sitemap-canvas { width: 100%; height: 100%; }
+.sitemap-state {
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 500;
+  padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--line); font-size: 12.5px; color: var(--ink-2); box-shadow: var(--shadow-sm);
+}
+.sitemap-fallback { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; height: auto; }
+.sitemap-note { margin: 0; font-size: 12.5px; color: var(--muted); text-align: center; }
+.leaflet-container { font: inherit; background: #eef2f0; }
+.leaflet-control-attribution { font-size: 10.5px; }
+.map-pin { display: grid; place-items: center; }
+.map-pin-dot {
+  display: block; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); border: 2.5px solid #fff; box-shadow: 0 0 0 3px rgba(15, 122, 88, 0.25);
+}
+
+/* Conditions at the site */
+.conditions-empty { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+.conditions-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.conditions-grid div { padding: 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+.conditions-grid dt { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.conditions-grid dt svg { color: var(--accent); }
+.conditions-grid dd { margin: 6px 0 0; font-size: 17px; font-weight: 600; }
+.conditions-stamp { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+
+/* Readiness */
+.ready { display: flex; flex-direction: column; gap: 12px; }
+.ready-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 16px; margin: 0; padding: 0; list-style: none; }
+.ready-list li { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-2); }
+.ready-list li small { color: var(--muted); font-size: 11.5px; }
+.ready-list .is-done { color: var(--ink); }
+.ready-list .is-done svg { color: var(--accent); }
+.ready-list .is-todo svg, .ready-list .is-optional svg { color: var(--line-strong); }
+.ready-verdict { margin: 0; padding: 11px 13px; border-radius: 10px; font-size: 13.5px; }
+.ready-verdict.is-done { background: var(--accent-soft); color: var(--accent-ink); }
+.ready-verdict.is-todo { background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line); }
+.ready-warning {
+  display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 11px 13px;
+  border-radius: 10px; background: var(--amber-soft); color: #7a4f04; font-size: 13px; line-height: 1.5;
+}
+.ready-warning svg { flex: none; margin-top: 1px; }
+
+/* What is happening after submit */
+.progress { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; padding: 16px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+.step { display: flex; align-items: flex-start; gap: 11px; }
+.step-icon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+.step-text { display: flex; flex-direction: column; gap: 2px; }
+.step-text strong { font-size: 14px; font-weight: 600; }
+.step-text small { font-size: 12.5px; color: var(--muted); }
+.step.is-done .step-icon { background: var(--accent-soft); border-color: transparent; color: var(--accent-ink); }
+.step.is-running .step-icon { background: var(--surface); border-color: var(--accent); color: var(--accent); }
+.step.is-failed .step-icon { background: var(--red-soft); border-color: transparent; color: var(--red); }
+.step.is-failed .step-text small { color: var(--red); }
+.step-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+.progress-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+.preview-tags { margin: 10px 0 0; font-size: 13px; font-weight: 600; color: var(--accent-ink); }
+.devtools { padding: 14px 16px; border-radius: 12px; border: 1px dashed var(--line-strong); background: var(--surface-2); }
+.devtools summary { font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.devtools .chips { margin-top: 12px; }
+
+@media (max-width: 1180px) {
+  .addplant { grid-template-columns: minmax(0, 1fr); }
+  .addplant-rail { position: static; }
+  .ready-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .ready-list, .conditions-grid { grid-template-columns: minmax(0, 1fr); }
+  .addplant-form .form-row { grid-template-columns: minmax(0, 1fr); }
+}

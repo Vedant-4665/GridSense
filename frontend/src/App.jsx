@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { RotateCcw, TriangleAlert } from "lucide-react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext.jsx";
 import { BrandMark } from "./components/Brand.jsx";
@@ -14,8 +15,9 @@ import Insights from "./pages/Insights.jsx";
 import Overview from "./pages/Overview.jsx";
 
 export default function App() {
-  const { user } = useAuth();
+  const { user, unreachable, retryConnection } = useAuth();
   if (user === undefined) return <BootScreen />;
+  if (unreachable) return <Unreachable error={unreachable} onRetry={retryConnection} />;
 
   const app = (
     <PlantProvider>
@@ -39,6 +41,22 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate to={user ? "/overview" : "/login"} replace />} />
     </Routes>
+  );
+}
+
+/** The API is not answering. Says so, rather than showing a login form that cannot work. */
+function Unreachable({ error, onRetry }) {
+  return (
+    <div className="boot">
+      <div className="state state-error">
+        <span className="state-icon"><TriangleAlert size={24} /></span>
+        <h3>Can't reach GridSense</h3>
+        <p>{error?.message ?? "The server isn't answering."} Your session is still valid — this is the API, not you.</p>
+        <button type="button" className="btn btn-primary" onClick={onRetry}>
+          <RotateCcw size={16} /> Try again
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -3,7 +3,7 @@ import secrets
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    Column, DateTime, Float, ForeignKey, Integer, String, create_engine,
+    Column, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint, create_engine,
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
@@ -63,6 +63,9 @@ class User(Base):
 
 class Plant(Base):
     __tablename__ = "plants"
+    # Two requests carrying the same key are the same creation, even when they
+    # arrive together: the database, not a prior read, settles it.
+    __table_args__ = (UniqueConstraint("owner_id", "idempotency_key", name="uq_plant_idempotency"),)
     id = Column(Integer, primary_key=True)
     owner_id = Column(Integer, ForeignKey("users.id"), index=True)
     name = Column(String(120), nullable=False)
@@ -75,6 +78,9 @@ class Plant(Base):
     tariff_rate = Column(Float, default=config.DEFAULT_RETAIL_TARIFF)
     # Null means "use the regulator default for this technology".
     band_pct = Column(Float)
+    # The client's Idempotency-Key, so a retried creation returns the plant it
+    # already made instead of a second one.
+    idempotency_key = Column(String(64), index=True)
 
     owner = relationship("User", back_populates="plants")
     assets = relationship("Asset", back_populates="plant")

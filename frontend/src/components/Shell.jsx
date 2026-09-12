@@ -107,7 +107,10 @@ export default function Shell() {
             {isOwner && plant && <RunForecastButton />}
           </div>
         </header>
-        <motion.main key={location.pathname + (plant?.id ?? "")} className="content"
+        {/* Keyed on the route only. Pages refetch when the plant changes (it is
+            in their data dependencies), and remounting on plant id used to throw
+            away work in progress — a half-finished form, a running submission. */}
+        <motion.main key={location.pathname} className="content"
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: EASE }}>
           {content}
