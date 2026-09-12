@@ -1,4 +1,7 @@
 """Train and serve the generation forecast."""
+import json
+from datetime import datetime
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -33,6 +36,7 @@ def train(df: pd.DataFrame):
     metrics = evaluate(model, feat[split:])
     config.MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, config.MODEL_PATH)
+    _write_model_card(model, metrics, trained_on=split, total=len(X))
     return model, metrics
 
 
@@ -47,10 +51,17 @@ def evaluate(model, test: pd.DataFrame) -> dict:
     mae = float(np.mean(np.abs(pred_kw - test["ac_power"])))
     baseline_mae = float(np.mean(np.abs(test["baseline_kw"] - test["ac_power"])))
 
-    improvement = (baseline_mae - mae) / baseline_mae * 100 if baseline_mae else 0.0
+    # The same errors as a share of each plant's own capacity, so a 3 kW roof
+    # and a 50 MW park can be averaged without the big one swamping the small.
+    nmae = float(np.mean(np.abs(pred_kw - test["ac_power"]) / test["capacity_kw"])) * 100
+    baseline_nmae = float(np.mean(np.abs(test["baseline_kw"] - test["ac_power"]) / test["capacity_kw"])) * 100
+
+    improvement = (baseline_nmae - nmae) / baseline_nmae * 100 if baseline_nmae else 0.0
     return {
         "mae": round(mae, 3),
         "baseline_mae": round(baseline_mae, 3),
+        "mae_pct_of_capacity": round(nmae, 3),
+        "baseline_mae_pct_of_capacity": round(baseline_nmae, 3),
         "improvement_pct": round(improvement, 2),
         "test_blocks": len(test),
     }
@@ -66,6 +77,31 @@ def _same_block_yesterday(feat: pd.DataFrame) -> np.ndarray:
 
 def _capacity_factor(model, X) -> np.ndarray:
     return np.clip(model.predict(X), 0.0, 1.0)
+
+
+def _write_model_card(model, metrics: dict, trained_on: int, total: int):
+    """What the accuracy page reads: scores, and what the model leans on."""
+    importances = sorted(
+        ({"feature": name, "importance": round(float(v), 4)}
+         for name, v in zip(FEATURE_COLUMNS, model.feature_importances_)),
+        key=lambda f: -f["importance"],
+    )
+    config.MODEL_CARD_PATH.write_text(json.dumps({
+        **metrics,
+        "trained_at": datetime.now().isoformat(timespec="seconds"),
+        "training_blocks": trained_on,
+        "total_blocks": total,
+        "block_minutes": config.BLOCK_MINUTES,
+        "features": importances,
+        "baseline": "same 15-minute block yesterday",
+        "algorithm": "Gradient-boosted trees (XGBoost)",
+    }, indent=2))
+
+
+def model_card() -> dict:
+    if not config.MODEL_CARD_PATH.exists():
+        raise FileNotFoundError("Model not trained yet. Run: python seed.py")
+    return json.loads(config.MODEL_CARD_PATH.read_text())
 
 
 def load():

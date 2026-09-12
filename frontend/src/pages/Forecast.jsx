@@ -8,7 +8,8 @@ import { usePlants } from "../components/PlantContext.jsx";
 import Segmented from "../components/Segmented.jsx";
 import { ErrorState, PageSkeleton } from "../components/States.jsx";
 import { useApi } from "../components/useApi.js";
-import { useBand } from "../components/useBand.js";
+import Collapsible from "../components/Collapsible.jsx";
+import { useViewMode } from "../lib/viewMode.jsx";
 import WhatIf from "../components/WhatIf.jsx";
 import { BLOCK_HOURS, joinBlocks, maxBy, sum } from "../lib/blocks.js";
 import { dayShort, energy, hhmm, pct, power } from "../lib/format.js";
@@ -18,7 +19,8 @@ const HORIZONS = [["24", "24h"], ["48", "48h"], ["72", "72h"]];
 
 export default function Forecast() {
   const { plant, version } = usePlants();
-  const band = useBand(plant.plant_type);
+  const { expert, say } = useViewMode();
+  const band = plant.band_pct;
   const [horizon, setHorizon] = useState("48");
   const { data, error } = useApi(() => Promise.all([
     api.forecast(plant.id, Number(horizon)), api.recommendations(plant.id), api.generation(plant.id, 48),
@@ -69,11 +71,14 @@ export default function Forecast() {
 
       <Panel title="Try your own numbers" delay={0.2}
         meta="Drag the sliders to see how a deviation is charged. The server does the sums, so this is the same arithmetic used everywhere else.">
+        <Collapsible label={say("Try it with your own numbers", "Open the costing sandbox")} open={expert}>
         <WhatIf key={plant.id} initial={{
+          bandPct: band,
           plantType: plant.plant_type,
           scheduled: worst ? Math.round(worst.scheduled_kw * BLOCK_HOURS) : undefined,
           forecast: worst ? Math.round(worst.predicted_kw * BLOCK_HOURS) : undefined,
         }} />
+        </Collapsible>
       </Panel>
     </div>
   );

@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Activity, ChartSpline, ChevronDown, Cpu, Eye, LayoutDashboard, LoaderCircle, LogOut, Plus,
-  RefreshCw, Sun, Wind, Zap,
+  Activity, ChartSpline, ChevronDown, Cpu, Eye, Gauge, HelpCircle, LayoutDashboard, LoaderCircle,
+  LogOut, Plus, RefreshCw, Sun, Wind, Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -10,21 +10,26 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import { ROLES } from "../auth/roles.js";
 import { hhmm, power, rupees } from "../lib/format.js";
 import { EASE } from "../lib/motion.js";
+import { useViewMode } from "../lib/viewMode.jsx";
 import Brand from "./Brand.jsx";
 import { usePlants } from "./PlantContext.jsx";
 import { EmptyState, ErrorState, PageSkeleton } from "./States.jsx";
 import { useToast } from "./Toast.jsx";
+import Tour, { tourSeen } from "./Tour.jsx";
 
 const NAV = [
-  { to: "/overview", label: "Overview", icon: LayoutDashboard },
-  { to: "/forecast", label: "Forecast", icon: ChartSpline },
-  { to: "/actions", label: "What to do", icon: Zap },
-  { to: "/assets", label: "Equipment", icon: Cpu },
+  { to: "/overview", plain: "Overview", expert: "Overview", icon: LayoutDashboard },
+  { to: "/forecast", plain: "Forecast", expert: "Forecast explorer", icon: ChartSpline },
+  { to: "/actions", plain: "What to do", expert: "Grid actions", icon: Zap },
+  { to: "/assets", plain: "Equipment", expert: "Asset health", icon: Cpu },
+  { to: "/insights", plain: "Accuracy", expert: "Model insights", icon: Gauge },
 ];
 
 export default function Shell() {
   const { user, isOwner, logout } = useAuth();
   const { plants, plant, error } = usePlants();
+  const { expert, toggle, say } = useViewMode();
+  const [tourOpen, setTourOpen] = useState(() => !tourSeen());
   const location = useLocation();
   const role = ROLES[user.role];
   const RoleIcon = role?.icon ?? Activity;
@@ -41,7 +46,7 @@ export default function Shell() {
       <aside className="sidebar">
         <Brand />
         <nav className="nav" aria-label="Main">
-          {NAV.map(({ to, label, icon: Icon }) => (
+          {NAV.map(({ to, plain, expert: technical, icon: Icon }) => (
             <NavLink key={to} to={to} className="nav-link">
               {({ isActive }) => (
                 <>
@@ -50,7 +55,7 @@ export default function Shell() {
                       transition={{ type: "spring", stiffness: 500, damping: 38 }} />
                   )}
                   <Icon size={18} strokeWidth={1.8} />
-                  <span>{label}</span>
+                  <span>{say(plain, technical)}</span>
                 </>
               )}
             </NavLink>
@@ -89,7 +94,15 @@ export default function Shell() {
         <header className="topbar">
           {plant ? <PlantSwitcher /> : <span />}
           <div className="topbar-right">
-            <LiveClock />
+            {expert && <LiveClock />}
+            <button type="button" className="icon-btn" onClick={() => setTourOpen(true)}
+              title="How GridSense works" aria-label="How GridSense works">
+              <HelpCircle size={18} />
+            </button>
+            <button type="button" className={`mode-switch ${expert ? "is-expert" : ""}`} onClick={toggle}
+              title={expert ? "Switch to plain language" : "Switch to industry terms"}>
+              <span>Plain</span><span>Expert</span>
+            </button>
             {!isOwner && <span className="pill pill-muted"><Eye size={14} /> Read-only</span>}
             {isOwner && plant && <RunForecastButton />}
           </div>
@@ -100,6 +113,7 @@ export default function Shell() {
           {content}
         </motion.main>
       </div>
+      <Tour open={tourOpen} onClose={() => setTourOpen(false)} />
     </div>
   );
 }

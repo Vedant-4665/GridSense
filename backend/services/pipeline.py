@@ -95,6 +95,7 @@ def recommendation_for(plant: Plant, t: datetime, scheduled_kw: float, predicted
         scheduled_kwh=scheduled_kw * hours,
         forecast_kwh=predicted_kw * hours,
         plant_type=plant.plant_type,
+        band=plant.effective_band_pct / 100,
     )
     if not result["breached"]:
         return None
@@ -109,6 +110,33 @@ def recommendation_for(plant: Plant, t: datetime, scheduled_kw: float, predicted
         expected_delta_kwh=result.get("chargeable_units"),
         exposure_inr=result["exposure_inr"], message=message,
     )
+
+
+def recost(s, plant: Plant) -> dict:
+    """
+    Re-price the blocks already forecast, without fetching weather again.
+    Used when the tariff or the tolerance band changes.
+    """
+    start = _next_block_start(datetime.now())
+    (s.query(Recommendation)
+      .filter(Recommendation.plant_id == plant.id, Recommendation.window_start >= start)
+      .delete(synchronize_session=False))
+
+    blocks = (s.query(Forecast)
+               .filter(Forecast.plant_id == plant.id, Forecast.target_timestamp >= start)
+               .order_by(Forecast.target_timestamp).all())
+    breached, exposure = 0, 0.0
+    for block in blocks:
+        if block.scheduled_kw is None:
+            continue
+        rec = recommendation_for(plant, block.target_timestamp,
+                                 scheduled_kw=block.scheduled_kw, predicted_kw=block.predicted_kw)
+        if rec:
+            s.add(rec)
+            breached += 1
+            exposure += rec.exposure_inr
+    return {"plant_id": plant.id, "blocks_recosted": len(blocks),
+            "breached_blocks": breached, "total_exposure_inr": round(exposure, 2)}
 
 
 def _next_block_start(now: datetime) -> datetime:

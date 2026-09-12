@@ -10,6 +10,7 @@ import AddPlant from "./pages/AddPlant.jsx";
 import AssetHealth from "./pages/AssetHealth.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
 import Forecast from "./pages/Forecast.jsx";
+import Insights from "./pages/Insights.jsx";
 import Overview from "./pages/Overview.jsx";
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/forecast" element={<Forecast />} />
         <Route path="/actions" element={<Actions />} />
         <Route path="/assets" element={<AssetHealth />} />
+        <Route path="/insights" element={<Insights />} />
         <Route path="/plants/new" element={<AddPlant />} />
       </Route>
       <Route path="*" element={<Navigate to={user ? "/overview" : "/login"} replace />} />

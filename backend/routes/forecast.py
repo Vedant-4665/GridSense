@@ -49,10 +49,12 @@ def costing_preview():
     re-run with any scheduled/forecast pair during a demo.
     """
     body = request.get_json(force=True) or {}
+    band = body.get("band_pct")
     result = costing.block_exposure(
         scheduled_kwh=float(body.get("scheduled_kwh", 0)),
         forecast_kwh=float(body.get("forecast_kwh", 0)),
         plant_type=body.get("plant_type", "solar"),
+        band=None if band is None else float(band) / 100,
     )
     action, message = costing.recommend_action(result)
     return jsonify({**result, "action_type": action, "message": message})

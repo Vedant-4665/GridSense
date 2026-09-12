@@ -88,7 +88,10 @@ def seed_demo():
                   status="healthy")
             for i in range(1, INVERTERS + 1)
         ]
-        s.add_all(assets)
+        rooftop_inverter = Asset(plant_id=rooftop.id, source_key="ROOF-01",
+                                 asset_name="Rooftop inverter", capacity_kw=rooftop.capacity_kw,
+                                 status="healthy")
+        s.add_all([*assets, rooftop_inverter])
         s.flush()
 
         now = datetime.now().replace(minute=0, second=0, microsecond=0)
@@ -111,8 +114,14 @@ def seed_demo():
                 s.add(GenerationReading(plant_id=utility.id, asset_id=asset.id, timestamp=t,
                                         ac_power=output, dc_power=output * 1.02))
 
-            s.add(WeatherReading(
-                plant_id=utility.id, timestamp=t,
+            # The rooftop sits in the same city: same weather, one inverter,
+            # a thousandth of the output and no soiling.
+            roof_output = plant_output / utility.capacity_kw * rooftop.capacity_kw
+            s.add(GenerationReading(plant_id=rooftop.id, asset_id=rooftop_inverter.id,
+                                    timestamp=t, ac_power=roof_output, dc_power=roof_output * 1.02))
+
+            weather = dict(
+                timestamp=t,
                 ambient_temp=26 + 8 * math.sin(math.pi * hour / 24),
                 module_temp=30 + 14 * math.sin(math.pi * hour / 24),
                 # Measured irradiance, so clouds are already in it: the same
@@ -120,7 +129,9 @@ def seed_demo():
                 irradiation=clear * weather_factor / utility.capacity_kw,
                 cloud_cover=(1 - weather_factor) * 100, wind_speed=3.4,
                 source="sensor",
-            ))
+            )
+            s.add(WeatherReading(plant_id=utility.id, **weather))
+            s.add(WeatherReading(plant_id=rooftop.id, **weather))
             t += timedelta(minutes=config.BLOCK_MINUTES)
 
         # --- forward forecast: 72 hours --------------------------------------
@@ -130,6 +141,17 @@ def seed_demo():
             clear = solar_curve(hour, utility.capacity_kw)
             predicted = clear * random.uniform(0.90, 1.0)
             scheduled = clear * 0.97
+
+            # The rooftop is not scheduled with the grid: no schedule, no
+            # deviation charges, just an expectation of output.
+            roof_predicted = predicted / utility.capacity_kw * rooftop.capacity_kw
+            s.add(Forecast(
+                plant_id=rooftop.id, target_timestamp=t,
+                horizon_hours=int((t - now).total_seconds() // 3600),
+                predicted_kw=roof_predicted,
+                confidence_low=roof_predicted * (1 - config.CONFIDENCE_BAND),
+                confidence_high=roof_predicted * (1 + config.CONFIDENCE_BAND),
+            ))
 
             s.add(Forecast(
                 plant_id=utility.id, target_timestamp=t,

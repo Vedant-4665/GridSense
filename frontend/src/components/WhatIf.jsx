@@ -23,12 +23,12 @@ export default function WhatIf({ initial = {} }) {
   useEffect(() => {
     let alive = true;
     const id = setTimeout(() => {
-      api.costingPreview({ scheduled_kwh: scheduled, forecast_kwh: forecast, plant_type: plantType })
+      api.costingPreview({ scheduled_kwh: scheduled, forecast_kwh: forecast, plant_type: plantType, band_pct: initial.bandPct })
         .then((r) => { if (alive) { setResult(r); setError(null); } })
         .catch((e) => { if (alive) setError(e); });
     }, 120);
     return () => { alive = false; clearTimeout(id); };
-  }, [scheduled, forecast, plantType]);
+  }, [scheduled, forecast, plantType, initial.bandPct]);
 
   return (
     <div className="whatif">

@@ -7,7 +7,10 @@ must be reproducible and inspectable. Every number here traces to config.py.
 import config
 
 
-def tolerance_band(plant_type: str) -> float:
+def tolerance_band(plant_type: str, override: float | None = None) -> float:
+    """Fraction of scheduled generation allowed before charges start."""
+    if override is not None:
+        return override
     return config.TOLERANCE_BAND.get(plant_type, 0.05)
 
 
@@ -19,7 +22,8 @@ def slab_rate(abs_error_fraction: float) -> float:
     return config.DEVIATION_SLABS[-1][1]
 
 
-def block_exposure(scheduled_kwh: float, forecast_kwh: float, plant_type: str = "solar") -> dict:
+def block_exposure(scheduled_kwh: float, forecast_kwh: float, plant_type: str = "solar",
+                   band: float | None = None) -> dict:
     """
     Exposure for one settlement block.
 
@@ -31,14 +35,18 @@ def block_exposure(scheduled_kwh: float, forecast_kwh: float, plant_type: str = 
 
     deviation_kwh = forecast_kwh - scheduled_kwh
     error_fraction = abs(deviation_kwh) / scheduled_kwh
-    band = tolerance_band(plant_type)
+    band = tolerance_band(plant_type, band)
 
+    direction = "under" if deviation_kwh < 0 else "over"
     if error_fraction <= band:
         return {
             "breached": False, "exposure_inr": 0.0,
             "deviation_pct": round(error_fraction * 100, 2),
             "band_pct": round(band * 100, 2),
-            "direction": "under" if deviation_kwh < 0 else "over",
+            "direction": direction,
+            # Surplus earns nothing when the grid is already at or above
+            # OVER_INJECTION_FREQ_HZ, whether or not the band is breached.
+            "over_injection_risk": direction == "over",
         }
 
     chargeable_kwh = (error_fraction - band) * scheduled_kwh
@@ -48,7 +56,8 @@ def block_exposure(scheduled_kwh: float, forecast_kwh: float, plant_type: str = 
         "breached": True,
         "deviation_pct": round(error_fraction * 100, 2),
         "band_pct": round(band * 100, 2),
-        "direction": "under" if deviation_kwh < 0 else "over",
+        "direction": direction,
+        "over_injection_risk": direction == "over",
         "chargeable_units": round(chargeable_kwh, 2),
         "rate_per_unit": rate,
         "exposure_inr": round(chargeable_kwh * rate, 2),

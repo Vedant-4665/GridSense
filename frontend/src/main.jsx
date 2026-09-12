@@ -12,6 +12,7 @@ import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/600.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./auth/AuthContext.jsx";
+import { ViewModeProvider } from "./lib/viewMode.jsx";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -19,9 +20,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       {/* Honour the OS "reduce motion" setting for every animation. */}
       <MotionConfig reducedMotion="user">
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <ViewModeProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ViewModeProvider>
       </MotionConfig>
     </BrowserRouter>
   </React.StrictMode>

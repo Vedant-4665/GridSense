@@ -1,10 +1,12 @@
 import { motion } from "framer-motion";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { actionFor } from "../lib/actions.js";
+import { useViewMode } from "../lib/viewMode.jsx";
 import { dayShort, hhmm, pct, rupeesExact } from "../lib/format.js";
 
 // Breached blocks ranked by rupee exposure, the order an operator should work through them.
 export default function ActionList({ blocks, limit, selected, onSelect }) {
+  const { say } = useViewMode();
   const rows = [...blocks].sort((a, b) => b.rec.exposure_inr - a.rec.exposure_inr).slice(0, limit ?? blocks.length);
   const max = rows[0]?.rec.exposure_inr || 1;
 
@@ -25,7 +27,13 @@ export default function ActionList({ blocks, limit, selected, onSelect }) {
                 <small>{dayShort(b.t)}</small>
               </span>
               <span className="action-what">
-                <span className="action-dir"><Direction size={14} />{pct(b.rec.deviation_pct)} {b.rec.window_type}</span>
+                <span className="action-dir">
+                  <Direction size={14} />
+                  {say(
+                    `${Math.round(b.rec.deviation_pct)}% ${b.rec.window_type === "under" ? "less than promised" : "more than promised"}`,
+                    `${pct(b.rec.deviation_pct)} ${b.rec.window_type}`,
+                  )}
+                </span>
                 <span className="action-type"><Icon size={13} />{action.label}</span>
               </span>
               <span className="action-bar" aria-hidden="true">

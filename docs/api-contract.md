@@ -79,8 +79,11 @@ Single call for every KPI on the overview page.
 ```json
 [{ "id": 1, "name": "Ahmedabad Solar Park", "location": "Gujarat, India",
    "latitude": 23.0225, "longitude": 72.5714, "capacity_kw": 50000,
-   "plant_type": "solar", "owner_type": "utility", "tariff_rate": 8.0 }]
+   "plant_type": "solar", "owner_type": "utility", "tariff_rate": 8.0,
+   "band_pct": 5.0, "band_is_custom": false }]
 ```
+`band_pct` is always the band in force for that plant: the regulator's default
+for its technology, or the owner's own figure when `band_is_custom` is true.
 
 ## POST /api/plants
 Adds a plant owned by the current user. Owner roles only (`403` otherwise).
@@ -95,6 +98,15 @@ but its blocks come back unscheduled and uncosted.
 
 ## GET /api/plants/:id
 As above, plus `"assets": [...]`.
+
+## PATCH /api/plants/:id
+Changes the assumptions behind a plant's costing, then re-prices its forecast in
+place. Owner roles only. Any subset of:
+```json
+{ "name": "...", "location": "...", "tariff_rate": 3.0, "band_pct": 2.5 }
+```
+`band_pct: null` restores the regulator's default. Returns the plant.
+Errors: `400` validation, `404` unknown plant, `403` not the owner.
 
 ## POST /api/plants/:id/schedule
 Declares the current forecast as the schedule filed with the grid, for every
@@ -146,12 +158,15 @@ with any numbers a judge suggests.
 
 Request:
 ```json
-{ "scheduled_kwh": 10000, "forecast_kwh": 8600, "plant_type": "solar" }
+{ "scheduled_kwh": 10000, "forecast_kwh": 8600, "plant_type": "solar", "band_pct": 5 }
 ```
+`band_pct` is optional; without it the regulator's default for that technology
+applies.
 Response:
 ```json
 {
   "breached": true, "deviation_pct": 14.0, "band_pct": 5.0, "direction": "under",
+  "over_injection_risk": false,
   "chargeable_units": 900.0, "rate_per_unit": 0.25, "exposure_inr": 225.0,
   "action_type": "dispatch_storage", "message": "..."
 }
@@ -166,6 +181,28 @@ resolved ones are left alone). Owner roles only. Needs a trained model.
 ```
 Errors: `400` no `plant_id`, `404` unknown plant, `403` not the owner,
 `503` model not trained.
+
+## GET /api/model
+Scores from the last training run, plus what the model leans on. Written by
+`seed.py`, read by the accuracy page.
+```json
+{
+  "mae": 150.3, "baseline_mae": 617.56,
+  "mae_pct_of_capacity": 0.646, "baseline_mae_pct_of_capacity": 2.485,
+  "improvement_pct": 73.99, "test_blocks": 269, "training_blocks": 1075,
+  "algorithm": "Gradient-boosted trees (XGBoost)",
+  "baseline": "same 15-minute block yesterday",
+  "trained_at": "2026-09-12T11:23:18",
+  "features": [{ "feature": "irradiation", "importance": 0.7755 }]
+}
+```
+Errors come back as `503` until a model has been trained. MAE is reported both
+in kW and as a share of capacity, so plants of different sizes can be averaged.
+
+## GET /api/settings
+The regulatory parameters every rupee figure rests on: tolerance bands per
+technology, the deviation slab table, the over-injection frequency, block
+length, and the role list.
 
 ## GET /api/alerts?status=open
 Ordered by `est_revenue_loss` descending.

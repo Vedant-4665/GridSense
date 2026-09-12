@@ -6,7 +6,7 @@ from flask_cors import CORS
 
 import config
 from models import init_db
-from routes import alerts, auth, dashboard, diagnostics, forecast, plants
+from routes import alerts, auth, dashboard, diagnostics, forecast, insights, plants
 
 
 def create_app():
@@ -22,7 +22,7 @@ def create_app():
     init_db()
 
     app.before_request(auth.require_login)
-    for module in (auth, plants, forecast, alerts, dashboard, diagnostics):
+    for module in (auth, plants, forecast, alerts, dashboard, diagnostics, insights):
         app.register_blueprint(module.bp)
 
     @app.get("/api/health")

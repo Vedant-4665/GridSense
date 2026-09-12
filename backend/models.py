@@ -73,6 +73,8 @@ class Plant(Base):
     plant_type = Column(String(16), nullable=False, default="solar")   # solar | wind
     owner_type = Column(String(16), nullable=False, default="utility")  # utility | distributed
     tariff_rate = Column(Float, default=config.DEFAULT_RETAIL_TARIFF)
+    # Null means "use the regulator default for this technology".
+    band_pct = Column(Float)
 
     owner = relationship("User", back_populates="plants")
     assets = relationship("Asset", back_populates="plant")
@@ -83,7 +85,16 @@ class Plant(Base):
             "latitude": self.latitude, "longitude": self.longitude,
             "capacity_kw": self.capacity_kw, "plant_type": self.plant_type,
             "owner_type": self.owner_type, "tariff_rate": self.tariff_rate,
+            # Always the band in force for this plant, default or overridden.
+            "band_pct": self.effective_band_pct,
+            "band_is_custom": self.band_pct is not None,
         }
+
+    @property
+    def effective_band_pct(self) -> float:
+        if self.band_pct is not None:
+            return self.band_pct
+        return config.TOLERANCE_BAND.get(self.plant_type, 0.05) * 100
 
 
 class Asset(Base):

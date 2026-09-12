@@ -45,6 +45,24 @@ Vite proxies `/api/*` to port 5000, so no CORS configuration is needed in develo
 
 ---
 
+## Reading the app
+
+The interface has two registers, switched in the top bar and remembered per
+browser:
+
+- **Plain** explains everything in ordinary words, hides the dense panels
+  behind "show the working", and lets you tap any technical term for a
+  one-line definition. A first-time visitor gets a four-step walkthrough,
+  replayable from the `?` button.
+- **Expert** restores the regulatory vocabulary (tolerance band, deviation
+  charge, settlement runway), opens the detail panels, and shows the live
+  settlement-block clock.
+
+Rooftop plants (`owner_type: distributed`) get their own overview: plain-language
+health, expected monthly bill savings, and the best window to run appliances.
+
+---
+
 ## Accounts
 
 Everything under `/api` except `/api/health` and `/api/auth/*` needs a login.
@@ -94,8 +112,9 @@ backend/
 
 frontend/
   src/api/client.js single place the API base URL lives
-  src/pages/        Overview, Forecast, Actions, AssetHealth
-  src/components/   shared hook + currency formatting
+  src/pages/        Overview, Forecast, Actions, AssetHealth, Insights
+  src/lib/          view mode (plain/expert), glossary, scale, formatting
+  src/components/   Tour, Term (inline definitions), charts, shared hooks
 
 docs/api-contract.md   agreed request/response shapes — read this first
 data/raw/              source CSVs (gitignored)

@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR.parent / "data"
 MODEL_PATH = BASE_DIR / "ml" / "model.pkl"
+# Scores and feature importances from the last training run, for the accuracy page.
+MODEL_CARD_PATH = BASE_DIR / "ml" / "model_card.json"
 
 load_dotenv(BASE_DIR / ".env")
 

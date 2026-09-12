@@ -37,6 +37,10 @@ export const api = {
   plants: () => request("/api/plants"),
   plant: (id) => request(`/api/plants/${id}`),
   createPlant: (plant) => request("/api/plants", post(plant)),
+  updatePlant: (id, changes) =>
+    request(`/api/plants/${id}`, { method: "PATCH", body: JSON.stringify(changes) }),
+  modelCard: () => request("/api/model"),
+  settings: () => request("/api/settings"),
   generation: (id, limit = 500) => request(`/api/plants/${id}/generation?limit=${limit}`),
   forecast: (id, horizon = 24) => request(`/api/plants/${id}/forecast?horizon=${horizon}`),
   recommendations: (id) => request(`/api/plants/${id}/recommendations`),

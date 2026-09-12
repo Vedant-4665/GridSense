@@ -6,6 +6,7 @@ from sqlalchemy import func
 import config
 from models import OWNER_ROLES, Forecast, GenerationReading, Plant, Recommendation, get_session
 from routes.auth import can_act_on, visible_plant, visible_plants
+from services import pipeline
 
 bp = Blueprint("plants", __name__, url_prefix="/api/plants")
 
@@ -56,6 +57,53 @@ def get_plant(plant_id):
         data = plant.to_dict()
         data["assets"] = [a.to_dict() for a in plant.assets]
         return jsonify(data)
+
+
+@bp.patch("/<int:plant_id>")
+def update_plant(plant_id):
+    """
+    Change the assumptions behind this plant's costing: its tariff, its
+    tolerance band, or its name. Re-prices the forecast in place.
+    """
+    body = request.get_json(silent=True) or {}
+    with get_session() as s:
+        plant = visible_plant(s, plant_id)
+        if not plant:
+            return jsonify({"error": "Plant not found"}), 404
+        if not can_act_on(plant):
+            return jsonify({"error": "Only the plant's owner can change its settings"}), 403
+
+        if "name" in body:
+            name = str(body["name"]).strip()
+            if not name:
+                return jsonify({"error": "name is required"}), 400
+            plant.name = name
+        if "location" in body:
+            plant.location = str(body["location"] or "").strip() or None
+        if "tariff_rate" in body:
+            try:
+                tariff = float(body["tariff_rate"])
+            except (TypeError, ValueError):
+                return jsonify({"error": "tariff_rate must be a number"}), 400
+            if not 0 < tariff < 100:
+                return jsonify({"error": "tariff_rate must be between 0 and 100 Rs/kWh"}), 400
+            plant.tariff_rate = tariff
+        if "band_pct" in body:
+            band = body["band_pct"]
+            if band is None:          # back to the regulator default
+                plant.band_pct = None
+            else:
+                try:
+                    band = float(band)
+                except (TypeError, ValueError):
+                    return jsonify({"error": "band_pct must be a number"}), 400
+                if not 0 <= band <= 100:
+                    return jsonify({"error": "band_pct must be between 0 and 100"}), 400
+                plant.band_pct = band
+
+        pipeline.recost(s, plant)
+        s.commit()
+        return jsonify(plant.to_dict())
 
 
 @bp.get("/<int:plant_id>/generation")
