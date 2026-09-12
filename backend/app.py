@@ -1,4 +1,7 @@
 """GridSense API entry point."""
+import os
+import socket
+import sys
 from datetime import timedelta
 
 from flask import Flask, jsonify
@@ -34,5 +37,34 @@ def create_app():
     return app
 
 
+def _already_answering(port: int) -> bool:
+    """
+    True when something else is already serving this port. On macOS that is
+    usually AirPlay Receiver on 5000, which answers requests the app never
+    sees — half the traffic reaches Flask, half reaches AirPlay, and the app
+    looks broken for no visible reason.
+    """
+    for family, address in ((socket.AF_INET, "127.0.0.1"), (socket.AF_INET6, "::1")):
+        try:
+            with socket.socket(family, socket.SOCK_STREAM) as probe:
+                probe.settimeout(0.4)
+                if probe.connect_ex((address, port)) == 0:
+                    return True
+        except OSError:
+            continue
+    return False
+
+
 if __name__ == "__main__":
+    # The reloader re-runs this file in a child process; only the parent checks.
+    if not os.environ.get("WERKZEUG_RUN_MAIN") and _already_answering(config.API_PORT):
+        sys.exit(
+            f"\nPort {config.API_PORT} is already answering, so GridSense would only receive "
+            f"some of the traffic.\n"
+            f"On macOS this is usually AirPlay Receiver (System Settings -> General -> "
+            f"AirDrop & Handoff).\n\n"
+            f"Either turn that off, or run both halves on another port:\n"
+            f"  API_PORT=5001 python app.py\n"
+            f"  API_PORT=5001 npm run dev\n"
+        )
     create_app().run(debug=True, port=config.API_PORT)

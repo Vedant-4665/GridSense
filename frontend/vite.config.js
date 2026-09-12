@@ -10,6 +10,8 @@ export default defineConfig({
     port: 5173,
     // Lets the frontend call /api/* without CORS juggling during development,
     // and keeps the session cookie same-origin.
-    proxy: { "/api": `http://localhost:${apiPort}` },
+    // 127.0.0.1, not localhost: on macOS localhost resolves to ::1 first,
+    // where AirPlay Receiver answers instead of the API.
+    proxy: { "/api": `http://127.0.0.1:${apiPort}` },
   },
 });
