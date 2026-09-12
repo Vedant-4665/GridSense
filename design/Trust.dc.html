@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+  <style>
+    body { margin: 0; background: #f5f7f6; color: #0f1a16; font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #0f7a58; text-decoration: none; } a:hover { color: #0a5c42; }
+    .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+    .dsp { font-family: "Space Grotesk", Inter, sans-serif; letter-spacing: -0.03em; }
+</style>
+</helmet>
+<div style="width:1440px; min-height:1160px; background:#f5f7f6; display:flex; flex-direction:column;">
+<header style="display:flex; align-items:center; gap:22px; height:64px; padding:0 28px; background:#ffffff; border-bottom:1px solid #e6ebe8;">
+  <div style="display:flex; align-items:center; gap:9px;"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="9" fill="#e7f4ef" stroke="#0f7a58" stroke-width="1.4" /><path d="M6 20 C10 20 11 9 16 9 S22 20 26 20" fill="none" stroke="#0f7a58" stroke-width="2.2" stroke-linecap="round" /><circle cx="16" cy="9" r="2.5" fill="#a86c05" /></svg><span class="dsp" style="font-size:18px; font-weight:700;">Grid<span style="color:#0f7a58;">Sense</span></span></div>
+  <nav style="display:flex; gap:4px;"><span style="padding:7px 12px; border-radius:9px; font-size:14.5px; font-weight:500; color:#48584f; background:transparent;">Today</span><span style="padding:7px 12px; border-radius:9px; font-size:14.5px; font-weight:500; color:#48584f; background:transparent;">Forecast</span><span style="padding:7px 12px; border-radius:9px; font-size:14.5px; font-weight:600; color:#0a5c42; background:#e7f4ef;">Trust</span></nav>
+  <div style="flex-grow:1;"></div>
+  <span style="font-size:13.5px; color:#48584f;">Ahmedabad Solar Park · 50 MW</span>
+  <button style="height:38px; padding:0 16px; border-radius:10px; background:#0f7a58; border:1px solid #0f7a58; color:#ffffff; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer;">Update forecast</button>
+</header>
+<main style="width:100%; max-width:880px; margin:0 auto; padding:36px 24px 56px; display:flex; flex-direction:column; gap:26px;">
+<section><h1 class="dsp" style="margin:0; font-size:34px; font-weight:700;">Can you trust these numbers?</h1><p style="margin:10px 0 0; max-width:660px; font-size:15.5px; color:#48584f;">Every rupee on the other two screens comes from one forecast and one set of rules. Here is how well the forecast does, and exactly which rules were applied. Change them and everything re-prices.</p></section>
+<section style="background:#ffffff; border:1px solid #e6ebe8; border-radius:14px; box-shadow:0 1px 2px rgba(15,26,22,0.05); padding:22px;">
+  <div><h2 class="dsp" style="margin:0; font-size:19px; font-weight:600;">How far off are we, typically?</h2></div>
+  <div style="display:flex; flex-direction:column; gap:10px; margin:18px 0 16px;">
+    <div style="display:grid; grid-template-columns:96px minmax(0,1fr) 74px; align-items:center; gap:14px;">
+  <span style="font-size:13.5px; color:#48584f;">GridSense</span>
+  <span style="display:block; height:14px; border-radius:7px; background:#f0f3f1;"><i style="display:block; width:25%; height:100%; border-radius:7px; background:#0f7a58;"></i></span>
+  <span class="mono" style="text-align:right; font-size:14px; font-weight:600;">0.3 MW</span>
+</div>
+    <div style="display:grid; grid-template-columns:96px minmax(0,1fr) 74px; align-items:center; gap:14px;">
+  <span style="font-size:13.5px; color:#48584f;">Guessing</span>
+  <span style="display:block; height:14px; border-radius:7px; background:#f0f3f1;"><i style="display:block; width:100%; height:100%; border-radius:7px; background:#c9d3ce;"></i></span>
+  <span class="mono" style="text-align:right; font-size:14px; font-weight:600;">1.2 MW</span>
+</div>
+  </div>
+  <p style="margin:0; font-size:14.5px; line-height:1.6; color:#48584f;">On a typical quarter-hour we miss by <strong style="color:#0f1a16;">0.3 MW</strong>.
+  Assuming today repeats tomorrow — the simplest forecast anyone can make — misses by <strong style="color:#0f1a16;">1.2 MW</strong>.
+  That makes us <strong style="color:#0f1a16;">74% closer</strong>.</p>
+  <div style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-top:18px;"><div style="padding:11px 13px; border-radius:10px; background:#fafbfa; border:1px solid #e6ebe8;"><div style="font-size:12px; color:#78877f; font-weight:600;">Checked on</div><div class="mono" style="margin-top:3px; font-size:14px; font-weight:600;">269 quarter-hours</div></div><div style="padding:11px 13px; border-radius:10px; background:#fafbfa; border:1px solid #e6ebe8;"><div style="font-size:12px; color:#78877f; font-weight:600;">Learned from</div><div class="mono" style="margin-top:3px; font-size:14px; font-weight:600;">1,075 quarter-hours</div></div><div style="padding:11px 13px; border-radius:10px; background:#fafbfa; border:1px solid #e6ebe8;"><div style="font-size:12px; color:#78877f; font-weight:600;">Method</div><div class="mono" style="margin-top:3px; font-size:14px; font-weight:600;">Gradient-boosted trees</div></div><div style="padding:11px 13px; border-radius:10px; background:#fafbfa; border:1px solid #e6ebe8;"><div style="font-size:12px; color:#78877f; font-weight:600;">Last trained</div><div class="mono" style="margin-top:3px; font-size:14px; font-weight:600;">Today, 11:23 am</div></div></div>
+</section>
+<section style="background:#ffffff; border:1px solid #e6ebe8; border-radius:14px; box-shadow:0 1px 2px rgba(15,26,22,0.05); padding:22px;">
+  <div><h2 class="dsp" style="margin:0; font-size:19px; font-weight:600;">What the forecast pays attention to</h2><p style="margin:4px 0 0; font-size:13.5px; color:#78877f;">You can see what drives a prediction, which matters when you have to justify a revised promise to the dispatch centre.</p></div>
+  <div style="display:flex; flex-direction:column; gap:10px; margin-top:18px;">
+    <div style="display:grid; grid-template-columns:96px minmax(0,1fr) 74px; align-items:center; gap:14px;">
+  <span style="font-size:13.5px; color:#48584f;">Sunlight</span>
+  <span style="display:block; height:14px; border-radius:7px; background:#f0f3f1;"><i style="display:block; width:78%; height:100%; border-radius:7px; background:#0f7a58;"></i></span>
+  <span class="mono" style="text-align:right; font-size:14px; font-weight:600;">78%</span>
+</div>
+    <div style="display:grid; grid-template-columns:96px minmax(0,1fr) 74px; align-items:center; gap:14px;">
+  <span style="font-size:13.5px; color:#48584f;">Air temperature</span>
+  <span style="display:block; height:14px; border-radius:7px; background:#f0f3f1;"><i style="display:block; width:17%; height:100%; border-radius:7px; background:#0f7a58;"></i></span>
+  <span class="mono" style="text-align:right; font-size:14px; font-weight:600;">17%</span>
+</div>
+    <div style="display:grid; grid-template-columns:96px minmax(0,1fr) 74px; align-items:center; gap:14px;">
+  <span style="font-size:13.5px; color:#48584f;">Cloud cover</span>
+  <span style="display:block; height:14px; border-radius:7px; background:#f0f3f1;"><i style="display:block; width:5%; height:100%; border-radius:7px; background:#0f7a58;"></i></span>
+  <span class="mono" style="text-align:right; font-size:14px; font-weight:600;">5%</span>
+</div>
+  </div>
+</section>
+<section style="background:#ffffff; border:1px solid #e6ebe8; border-radius:14px; box-shadow:0 1px 2px rgba(15,26,22,0.05); padding:22px;">
+  <div><h2 class="dsp" style="margin:0; font-size:19px; font-weight:600;">The rules we applied</h2><p style="margin:4px 0 0; font-size:13.5px; color:#78877f;">These are not our numbers to choose. Put in your own and every figure in the app is recalculated.</p></div>
+  <div style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)) auto; gap:18px; align-items:end; margin:18px 0 20px;">
+    <div>
+  <label style="display:block; margin-bottom:7px; font-size:13px; font-weight:600; color:#48584f;">What your electricity sells for</label>
+  <div style="display:flex; align-items:center; gap:7px; height:46px; padding:0 13px; border-radius:10px; border:1px solid #d3ddd7; background:#ffffff; color:#78877f;">
+    <span>₹</span><span class="mono" style="flex-grow:1; font-size:16px; font-weight:600; color:#0f1a16;">3.00</span><span>/ unit</span>
+  </div>
+  <p style="margin:7px 0 0; font-size:12px; color:#78877f;">Used to price what a faulty inverter loses.</p>
+</div>
+    <div>
+  <label style="display:block; margin-bottom:7px; font-size:13px; font-weight:600; color:#48584f;">How far you may miss, free</label>
+  <div style="display:flex; align-items:center; gap:7px; height:46px; padding:0 13px; border-radius:10px; border:1px solid #d3ddd7; background:#ffffff; color:#78877f;">
+    <span>±</span><span class="mono" style="flex-grow:1; font-size:16px; font-weight:600; color:#0f1a16;">5.0</span><span>%</span>
+  </div>
+  <p style="margin:7px 0 0; font-size:12px; color:#78877f;">The regulator's figure for solar.</p>
+</div>
+    <div style="padding-bottom:22px;"><button style="height:38px; padding:0 16px; border-radius:10px; background:#0f7a58; border:1px solid #0f7a58; color:#ffffff; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer;">Apply and re-price</button></div>
+  </div>
+  <table style="width:100%; border-collapse:collapse;">
+    <caption style="text-align:left; padding-bottom:8px; font-size:13px; color:#78877f;">What being outside the margin costs, per unit</caption>
+    <thead><tr>
+      <th style="padding:9px 12px; border-bottom:1px solid #e6ebe8; font-size:12px; color:#78877f; text-align:left;">How far outside</th>
+      <th style="padding:9px 12px; border-bottom:1px solid #e6ebe8; font-size:12px; color:#78877f; text-align:right;">Rate</th>
+    </tr></thead>
+    <tbody><tr><td style="padding:9px 12px; border-bottom:1px solid #e6ebe8; font-size:13.5px;">Inside ±5%</td><td class="mono" style="padding:9px 12px; border-bottom:1px solid #e6ebe8; font-size:13.5px; text-align:right;">free</td></tr><tr><td style="padding:9px 12px; border-bottom:1px solid #e6ebe8; font-size:13.5px;">up to 15% out</td><td class="mono" style="padding:9px 12px; border-bottom:1px solid #e6ebe8; font-size:13.5px; text-align:right;">₹0.25</td></tr><tr><td style="padding:9px 12px; border-bottom:1px solid #e6ebe8; font-size:13.5px;">up to 25% out</td><td class="mono" style="padding:9px 12px; border-bottom:1px solid #e6ebe8; font-size:13.5px; text-align:right;">₹0.50</td></tr><tr><td style="padding:9px 12px; border-bottom:1px solid #e6ebe8; font-size:13.5px;">further out</td><td class="mono" style="padding:9px 12px; border-bottom:1px solid #e6ebe8; font-size:13.5px; text-align:right;">₹0.75</td></tr></tbody>
+  </table>
+  <p style="margin:14px 0 0; font-size:12.5px; color:#78877f;">Surplus you did not promise earns nothing once grid frequency reaches 50.05 Hz.
+  These are decision-support estimates from the published slab structure, not settlement statements.</p>
+</section>
+</main>
+</div>
+</x-dc>
+</body>
+</html>

@@ -7,6 +7,16 @@ import requests
 import config
 
 
+def discover_plant_csvs(folder) -> list:
+    """(generation, weather) CSV pairs in the standard plant-export layout."""
+    pairs = []
+    for generation in sorted(folder.glob("*_Generation_Data.csv")):
+        weather = generation.with_name(generation.name.replace("_Generation_Data", "_Weather_Sensor_Data"))
+        if weather.exists():
+            pairs.append((generation, weather))
+    return pairs
+
+
 def load_generation_csv(path) -> pd.DataFrame:
     """Expects the standard plant generation export (15-minute resolution)."""
     df = pd.read_csv(path)

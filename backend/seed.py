@@ -1,8 +1,9 @@
 """
 Rebuild the database from scratch. One command, always.
 
-    python seed.py              # demo data + trained model + deviation scan
-    python seed.py --csv        # also load real CSVs from ../data/raw/
+    python seed.py              # seeded demo plant + trained model + deviation scan
+    python seed.py --csv        # real plant exports from ../data/raw/ instead
+    python seed.py --csv --true-dates   # keep the dataset's own dates
     python seed.py --no-train   # skip training (asset health stays empty)
 
 When the database gets into a bad state at 3am, run this rather than debugging it.
@@ -20,7 +21,7 @@ from models import (
     ROLES, Asset, Forecast, GenerationReading, Plant, Recommendation, User,
     WeatherReading, Base, engine, get_session, init_db, new_session_token,
 )
-from services import diagnostics, forecaster, pipeline
+from services import diagnostics, forecaster, ingest, pipeline, realdata
 
 random.seed(42)
 
@@ -64,20 +65,26 @@ def seed_demo_users(s) -> dict:
     return users
 
 
-def seed_demo():
+def seed_users() -> dict:
     with get_session() as s:
         demo = seed_demo_users(s)
+        s.commit()
+        return {role: user.id for role, user in demo.items()}
+
+
+def seed_demo(owners: dict):
+    with get_session() as s:
         utility = Plant(
             name="Ahmedabad Solar Park", location="Gujarat, India",
             latitude=23.0225, longitude=72.5714, capacity_kw=50000,
-            plant_type="solar", owner_type="utility", owner_id=demo["utility"].id,
+            plant_type="solar", owner_type="utility", owner_id=owners["utility"],
             tariff_rate=3.0,          # typical utility-scale PPA rate, Rs/kWh
         )
         rooftop = Plant(
             name="Rooftop 3kW (demo)", location="Ahmedabad, India",
             latitude=23.0225, longitude=72.5714, capacity_kw=3,
             plant_type="solar", owner_type="distributed",
-            tariff_rate=config.DEFAULT_RETAIL_TARIFF, owner_id=demo["plant_owner"].id,
+            tariff_rate=config.DEFAULT_RETAIL_TARIFF, owner_id=owners["plant_owner"],
         )
         s.add_all([utility, rooftop])
         s.flush()
@@ -170,10 +177,44 @@ def seed_demo():
             t += timedelta(minutes=config.BLOCK_MINUTES)
 
         s.commit()
-        print(f"Seeded {s.query(User).count()} demo accounts, "
-              f"{s.query(GenerationReading).count()} generation readings across {INVERTERS} inverters, "
+        print(f"Seeded {s.query(GenerationReading).count()} generation readings across {INVERTERS} inverters, "
               f"{s.query(Forecast).count()} forecast blocks, "
               f"{s.query(Recommendation).count()} recommendations.")
+
+
+def seed_real(owner_ids: list, shift_to_now: bool) -> list:
+    """Import the real plant exports sitting in data/raw/."""
+    with get_session() as s:
+        plants = realdata.import_plants(s, owner_ids, shift_to_now=shift_to_now)
+        s.commit()
+        for plant in plants:
+            readings = s.query(GenerationReading).filter_by(plant_id=plant.id).count()
+            inverters = s.query(Asset).filter_by(plant_id=plant.id).count()
+            print(f"Imported {plant.name}: {readings:,} readings from {inverters} inverters.")
+        if shift_to_now:
+            print("Dates replayed so the history ends at the current block; readings are untouched.")
+        return [p.id for p in plants]
+
+
+def forecast_real(plant_ids: list):
+    """
+    Forecast each imported plant from live weather, then file the schedule a
+    plant would have filed the usual way: yesterday's output, block for block.
+    """
+    with get_session() as s:
+        for plant_id in plant_ids:
+            plant = s.get(Plant, plant_id)
+            try:
+                run = pipeline.run_forecast(s, plant)
+            except Exception as exc:                     # noqa: BLE001 - weather API or model
+                print(f"  {plant.name}: no forecast yet ({exc})")
+                continue
+            filled = realdata.persistence_schedule(s, plant)
+            s.commit()
+            costed = pipeline.recost(s, plant)
+            s.commit()
+            print(f"  {plant.name}: {run['blocks_written']} blocks forecast, {filled} scheduled the naive way, "
+                  f"{costed['breached_blocks']} outside the band, Rs {costed['total_exposure_inr']:,.0f} at risk.")
 
 
 def train_model():
@@ -196,17 +237,31 @@ def scan_for_deviations(model):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--csv", action="store_true", help="load real CSVs from data/raw/")
+    parser.add_argument("--csv", action="store_true", help="import real plant exports from data/raw/")
+    parser.add_argument("--true-dates", action="store_true",
+                        help="with --csv, keep the dataset's own dates instead of replaying them to today")
     parser.add_argument("--train", action="store_true", help=argparse.SUPPRESS)  # now the default
     parser.add_argument("--no-train", dest="train", action="store_false",
                         help="skip model training and the deviation scan")
     parser.set_defaults(train=True)
     args = parser.parse_args()
 
+    try:
+        pairs = ingest.discover_plant_csvs(config.DATA_DIR / "raw") if args.csv else None
+    except OSError:
+        pairs = []
+    if args.csv and not pairs:
+        parser.error("no plant CSVs in data/raw/ — expected Plant_1_Generation_Data.csv "
+                     "and Plant_1_Weather_Sensor_Data.csv (see README)")
+
     reset()
-    seed_demo()
-    if args.csv:
-        print("TODO(hackathon): wire services.ingest.load_generation_csv here.")
+    owners = seed_users()
+    print(f"Seeded {len(owners)} demo accounts.")
+    plant_ids = (seed_real([owners["utility"], owners["plant_owner"]], shift_to_now=not args.true_dates)
+                 if args.csv else seed_demo(owners))
+
     if args.train:
         scan_for_deviations(train_model())
+        if args.csv:
+            forecast_real(plant_ids)
     print("Done. Start the API with: python app.py")

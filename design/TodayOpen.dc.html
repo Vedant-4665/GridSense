@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+  <style>
+    body { margin: 0; background: #f5f7f6; color: #0f1a16; font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #0f7a58; text-decoration: none; } a:hover { color: #0a5c42; }
+    .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+    .dsp { font-family: "Space Grotesk", Inter, sans-serif; letter-spacing: -0.03em; }
+</style>
+</helmet>
+<div style="width:1440px; min-height:940px; background:#f5f7f6; display:flex; flex-direction:column;">
+<header style="display:flex; align-items:center; gap:22px; height:64px; padding:0 28px; background:#ffffff; border-bottom:1px solid #e6ebe8;">
+  <div style="display:flex; align-items:center; gap:9px;"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="9" fill="#e7f4ef" stroke="#0f7a58" stroke-width="1.4" /><path d="M6 20 C10 20 11 9 16 9 S22 20 26 20" fill="none" stroke="#0f7a58" stroke-width="2.2" stroke-linecap="round" /><circle cx="16" cy="9" r="2.5" fill="#a86c05" /></svg><span class="dsp" style="font-size:18px; font-weight:700;">Grid<span style="color:#0f7a58;">Sense</span></span></div>
+  <nav style="display:flex; gap:4px;"><span style="padding:7px 12px; border-radius:9px; font-size:14.5px; font-weight:600; color:#0a5c42; background:#e7f4ef;">Today</span><span style="padding:7px 12px; border-radius:9px; font-size:14.5px; font-weight:500; color:#48584f; background:transparent;">Forecast</span><span style="padding:7px 12px; border-radius:9px; font-size:14.5px; font-weight:500; color:#48584f; background:transparent;">Trust</span></nav>
+  <div style="flex-grow:1;"></div>
+  <span style="font-size:13.5px; color:#48584f;">Ahmedabad Solar Park · 50 MW</span>
+  <button style="height:38px; padding:0 16px; border-radius:10px; background:#0f7a58; border:1px solid #0f7a58; color:#ffffff; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer;">Update forecast</button>
+</header>
+<main style="width:100%; max-width:880px; margin:0 auto; padding:36px 24px 56px; display:flex; flex-direction:column; gap:26px;">
+<section>
+  <p style="margin:0; font-size:14px; color:#78877f; font-weight:500;">Ahmedabad Solar Park · next 3 days</p>
+  <h1 class="dsp" style="margin:8px 0 0; font-size:54px; line-height:1.04; color:#bd2f26;">₹4.9 lakh</h1>
+  <p class="dsp" style="margin:6px 0 0; font-size:23px; line-height:1.25; color:#0f1a16; font-weight:500;">at risk over the next three days</p>
+  <p style="margin:14px 0 0; max-width:640px; font-size:16px; line-height:1.6; color:#48584f;">About <strong style="color:#0f1a16;">₹60 lakh a year</strong> at this rate, arriving a few thousand rupees at a time.</p>
+</section>
+<section style="background:#ffffff; border:1px solid #e6ebe8; border-radius:14px; box-shadow:0 1px 2px rgba(15,26,22,0.05); overflow:hidden;"><div style="border-bottom:1px solid #e6ebe8;"><div style="display:grid; grid-template-columns:34px 88px minmax(0,1fr) 108px 18px; align-items:center; gap:14px; padding:15px 18px; cursor:pointer;">
+  <span style="display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:#fdf3e1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a86c05" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18" /><path d="M6 21V9l6-5 6 5v12" /><path d="M10 21v-6h4v6" /></svg></span>
+  <span class="mono" style="font-size:13px; color:#78877f;">Since Tue</span>
+  <span style="min-width:0; font-size:15.5px; font-weight:500; line-height:1.35;">Inverter 3 is producing 11% less than it should</span>
+  <span class="mono" style="text-align:right; font-size:16px; font-weight:600; color:#bd2f26;">₹27,803</span>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78877f" stroke-width="2" stroke-linecap="round" style="transform:rotate(0deg);"><path d="M9 6l6 6-6 6" /></svg>
+</div></div><div style="border-bottom:1px solid #e6ebe8;"><div style="display:grid; grid-template-columns:34px 88px minmax(0,1fr) 108px 18px; align-items:center; gap:14px; padding:15px 18px; cursor:pointer;">
+  <span style="display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:#fdeceb;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bd2f26" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></span>
+  <span class="mono" style="font-size:13px; color:#78877f;">Mon 11:00</span>
+  <span style="min-width:0; font-size:15.5px; font-weight:500; line-height:1.35;">You make 89% less than you promised</span>
+  <span class="mono" style="text-align:right; font-size:16px; font-weight:600; color:#bd2f26;">₹7,286</span>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78877f" stroke-width="2" stroke-linecap="round" style="transform:rotate(90deg);"><path d="M9 6l6 6-6 6" /></svg>
+</div><div style="padding:2px 18px 20px 154px;">
+  <div style="padding:14px 16px; border-radius:12px; background:#fafbfa; border:1px solid #e6ebe8;"><div style="display:flex; justify-content:space-between; gap:16px; padding:9px 0; border-bottom:1px solid #e6ebe8;"><span style="font-size:13.5px; color:#48584f;">You promised the grid</span><span class="mono" style="font-size:13.5px; font-weight:600;">12,125 units</span></div><div style="display:flex; justify-content:space-between; gap:16px; padding:9px 0; border-bottom:1px solid #e6ebe8;"><span style="font-size:13.5px; color:#48584f;">We expect you to make</span><span class="mono" style="font-size:13.5px; font-weight:600;">1,320 units</span></div><div style="display:flex; justify-content:space-between; gap:16px; padding:9px 0; border-bottom:1px solid #e6ebe8;"><span style="font-size:13.5px; color:#48584f;">Allowed to miss, free</span><span class="mono" style="font-size:13.5px; font-weight:600;">606 units (±5%)</span></div><div style="display:flex; justify-content:space-between; gap:16px; padding:9px 0; border-bottom:1px solid #e6ebe8;"><span style="font-size:13.5px; color:#48584f;">Charged</span><span class="mono" style="font-size:13.5px; font-weight:600;">9,746 units at ₹0.75</span></div>
+    <div style="display:flex; justify-content:space-between; gap:16px; padding:12px 0 2px;">
+      <span style="font-size:14px; font-weight:600;">What it costs you</span>
+      <span class="mono" style="font-size:20px; font-weight:700; color:#bd2f26;">₹7,286</span>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:12px; margin-top:12px; padding:13px 16px; border-radius:12px; background:#e7f4ef;">
+    <span style="font-size:14px; color:#0a5c42;"><strong>Do this:</strong> Discharge storage to cover the gap, or lower your promise before the gate closes.</span>
+  </div>
+</div></div><div style="border-bottom:1px solid #e6ebe8;"><div style="display:grid; grid-template-columns:34px 88px minmax(0,1fr) 108px 18px; align-items:center; gap:14px; padding:15px 18px; cursor:pointer;">
+  <span style="display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:#fdeceb;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bd2f26" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></span>
+  <span class="mono" style="font-size:13px; color:#78877f;">Mon 11:15</span>
+  <span style="min-width:0; font-size:15.5px; font-weight:500; line-height:1.35;">You make 86% less than you promised</span>
+  <span class="mono" style="text-align:right; font-size:16px; font-weight:600; color:#0f1a16;">₹7,129</span>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78877f" stroke-width="2" stroke-linecap="round" style="transform:rotate(0deg);"><path d="M9 6l6 6-6 6" /></svg>
+</div></div><div style="border-bottom:1px solid #e6ebe8;"><div style="display:grid; grid-template-columns:34px 88px minmax(0,1fr) 108px 18px; align-items:center; gap:14px; padding:15px 18px; cursor:pointer;">
+  <span style="display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:#fdeceb;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bd2f26" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></span>
+  <span class="mono" style="font-size:13px; color:#78877f;">Mon 10:45</span>
+  <span style="min-width:0; font-size:15.5px; font-weight:500; line-height:1.35;">You make 89% less than you promised</span>
+  <span class="mono" style="text-align:right; font-size:16px; font-weight:600; color:#0f1a16;">₹7,062</span>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78877f" stroke-width="2" stroke-linecap="round" style="transform:rotate(0deg);"><path d="M9 6l6 6-6 6" /></svg>
+</div></div><div style="border-bottom:1px solid #e6ebe8;"><div style="display:grid; grid-template-columns:34px 88px minmax(0,1fr) 108px 18px; align-items:center; gap:14px; padding:15px 18px; cursor:pointer;">
+  <span style="display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:#fdeceb;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bd2f26" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></span>
+  <span class="mono" style="font-size:13px; color:#78877f;">Sat 13:00</span>
+  <span style="min-width:0; font-size:15.5px; font-weight:500; line-height:1.35;">You make 7% less than you promised</span>
+  <span class="mono" style="text-align:right; font-size:16px; font-weight:600; color:#0f1a16;">₹63</span>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78877f" stroke-width="2" stroke-linecap="round" style="transform:rotate(0deg);"><path d="M9 6l6 6-6 6" /></svg>
+</div></div><div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; font-size:13.5px; color:#78877f;"><span>133 more quarter-hours, ₹4.2 lakh between them</span><a href="#" style="font-weight:600;">Show all</a></div></section>
+</main>
+</div>
+</x-dc>
+</body>
+</html>

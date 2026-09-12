@@ -1,0 +1,102 @@
+{
+  "artboards": [
+    {
+      "file": "Login.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "1 \u00b7 Sign in"
+    },
+    {
+      "file": "Main.dc.html",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 760,
+      "title": "2 \u00b7 Today",
+      "is_interactive": true
+    },
+    {
+      "file": "TodayOpen.dc.html",
+      "x": 3120,
+      "y": 0,
+      "w": 1440,
+      "h": 940,
+      "title": "3 \u00b7 Today, row open"
+    },
+    {
+      "file": "Rooftop.dc.html",
+      "x": 4680,
+      "y": 0,
+      "w": 1440,
+      "h": 820,
+      "title": "4 \u00b7 Today, rooftop owner"
+    },
+    {
+      "file": "Forecast.dc.html",
+      "x": 0,
+      "y": 1200,
+      "w": 1440,
+      "h": 1120,
+      "title": "5 \u00b7 Forecast"
+    },
+    {
+      "file": "Trust.dc.html",
+      "x": 1560,
+      "y": 1200,
+      "w": 1440,
+      "h": 1160,
+      "title": "6 \u00b7 Trust"
+    },
+    {
+      "file": "NewPlant.dc.html",
+      "x": 3120,
+      "y": 1200,
+      "w": 1440,
+      "h": 820,
+      "title": "7 \u00b7 Plant with no forecast yet"
+    },
+    {
+      "file": "Mobile.dc.html",
+      "x": 4680,
+      "y": 1200,
+      "w": 390,
+      "h": 760,
+      "title": "8 \u00b7 Today on a phone"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-structure",
+      "x": 0,
+      "y": -150,
+      "w": 520,
+      "text": "Three screens, not five.\nToday (everything you act on) \u00b7 Forecast (what will happen) \u00b7 Trust (why believe it).\nEquipment problems and costly quarter-hours share ONE list, ordered by money."
+    },
+    {
+      "id": "note-today",
+      "x": 1560,
+      "y": -150,
+      "w": 460,
+      "text": "Today is now the verdict and the queue, nothing else.\nThe chart moved to Forecast; the panel notes, legend and footer are gone.\nRows are clickable here: open one for the arithmetic and the action."
+    },
+    {
+      "id": "note-scale",
+      "x": 3120,
+      "y": -150,
+      "w": 460,
+      "text": "Every rupee figure carries its real scale: what it becomes over a year, and what share of revenue that is."
+    },
+    {
+      "id": "note-gone",
+      "x": 0,
+      "y": 2420,
+      "w": 620,
+      "text": "Gone from the old build: the sidebar, the KPI card row, the duplicate chart and action list, the plain/expert switch, the per-panel explanatory notes, and the row subtitles."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

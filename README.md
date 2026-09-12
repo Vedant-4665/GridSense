@@ -79,6 +79,39 @@ The session is an HttpOnly cookie; see `docs/api-contract.md`.
 
 ---
 
+## Running on real plant data
+
+The seeded demo plant is synthetic. To run on real readings instead, drop a
+standard 15-minute plant export into `data/raw/` — a generation file per
+inverter plus the site's weather sensor, named in pairs:
+
+```
+data/raw/Plant_1_Generation_Data.csv
+data/raw/Plant_1_Weather_Sensor_Data.csv
+```
+
+Then:
+
+```bash
+cd backend && python seed.py --csv
+```
+
+That imports every pair it finds, derives each plant's capacity from the
+readings themselves, trains on the real output, scans for under-performing
+inverters, forecasts from live weather, and files the schedule a plant would
+have filed the usual way — yesterday's output, block for block — so the
+deviation you see is the real cost of scheduling naively.
+
+Two honest caveats, both stated on screen:
+
+- **Dates are replayed** so the history ends at the current block and sits next
+  to today's weather. The readings themselves are untouched; `--true-dates`
+  keeps the original calendar.
+- **Site coordinates are assumed.** Plant exports rarely publish the location,
+  so weather is taken at a real Indian solar site (`services/realdata.py`).
+
+---
+
 ## If the database breaks
 
 ```bash
