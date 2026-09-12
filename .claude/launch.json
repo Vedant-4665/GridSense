@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd backend && API_PORT=5001 ./venv/bin/python app.py"],
+      "port": 5001
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd frontend && API_PORT=5001 npx vite --port 5173 --strictPort"],
+      "port": 5173
+    }
+  ]
+}
