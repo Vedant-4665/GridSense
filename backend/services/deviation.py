@@ -20,22 +20,27 @@ def analyse(paired_readings: list[dict]) -> list[dict]:
     alerts, run = [], []
 
     for row in paired_readings:
+        # Sunset ends the run as surely as a recovered gap does: bank it first,
+        # or a whole afternoon of evidence is thrown away.
         if row.get("irradiation", 0) < CLEAR_SKY_IRRADIATION or not row.get("predicted_kw"):
-            run = []
+            run = _bank(run, alerts)
             continue
 
         gap_pct = (row["predicted_kw"] - row["actual_kw"]) / row["predicted_kw"] * 100
         if gap_pct >= SUSTAINED_GAP_PCT:
             run.append({**row, "gap_pct": gap_pct})
         else:
-            if len(run) >= MIN_CONSECUTIVE_BLOCKS:
-                alerts.append(_build_alert(run))
-            run = []
+            run = _bank(run, alerts)
 
+    _bank(run, alerts)
+    return alerts
+
+
+def _bank(run: list[dict], alerts: list[dict]) -> list:
+    """Close the current run, keeping it only if it lasted long enough."""
     if len(run) >= MIN_CONSECUTIVE_BLOCKS:
         alerts.append(_build_alert(run))
-
-    return alerts
+    return []
 
 
 def _build_alert(run: list[dict]) -> dict:

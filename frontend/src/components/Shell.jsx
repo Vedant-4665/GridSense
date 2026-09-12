@@ -16,10 +16,10 @@ import { EmptyState, ErrorState, PageSkeleton } from "./States.jsx";
 import { useToast } from "./Toast.jsx";
 
 const NAV = [
-  { to: "/overview", label: "Command", icon: LayoutDashboard },
+  { to: "/overview", label: "Overview", icon: LayoutDashboard },
   { to: "/forecast", label: "Forecast", icon: ChartSpline },
-  { to: "/actions", label: "Grid actions", icon: Zap },
-  { to: "/assets", label: "Asset health", icon: Cpu },
+  { to: "/actions", label: "What to do", icon: Zap },
+  { to: "/assets", label: "Equipment", icon: Cpu },
 ];
 
 export default function Shell() {
@@ -37,7 +37,6 @@ export default function Shell() {
 
   return (
     <div className="shell">
-      <div className="backdrop" aria-hidden="true" />
 
       <aside className="sidebar">
         <Brand />
@@ -233,9 +232,9 @@ function RunForecastButton() {
 
   return (
     <button type="button" className="btn btn-primary" onClick={run} disabled={running || !solar}
-      title={solar ? "Pull live weather and re-forecast the next 72 hours" : "Forecasting is solar-only for now"}>
+      title={solar ? "Pull the latest weather and redo the next 72 hours" : "Wind forecasting is not built yet"}>
       {running ? <LoaderCircle size={16} className="spin" /> : <RefreshCw size={16} />}
-      {running ? "Forecasting…" : "Run forecast"}
+      {running ? "Updating…" : "Update forecast"}
     </button>
   );
 }

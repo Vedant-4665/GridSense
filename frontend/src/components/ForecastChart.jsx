@@ -5,8 +5,8 @@ import { dayShort, hhmm, pct, rupeesExact } from "../lib/format.js";
 
 // Hex values of the CSS tokens: SVG presentation attributes can't read custom properties everywhere.
 const C = {
-  signal: "#36f1c2", sun: "#ffb547", danger: "#ff5c63", actual: "#c9d8d4",
-  grid: "rgba(128,226,205,0.07)", axis: "#6b7f7a",
+  signal: "#0f7a58", sun: "#a86c05", danger: "#bd2f26", actual: "#64748b",
+  grid: "#e6ebe8", axis: "#78877f",
 };
 const HOUR = 3600 * 1000;
 const TICK = { fontSize: 11, fontFamily: "JetBrains Mono, monospace", fill: C.axis };
@@ -50,7 +50,7 @@ export default function ForecastChart({ blocks, actuals = [], band, capacityKw, 
         <ComposedChart data={data} margin={{ top: 18, right: 8, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id="fc-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={C.signal} stopOpacity={0.3} />
+              <stop offset="0%" stopColor={C.signal} stopOpacity={0.18} />
               <stop offset="100%" stopColor={C.signal} stopOpacity={0} />
             </linearGradient>
           </defs>
@@ -63,20 +63,20 @@ export default function ForecastChart({ blocks, actuals = [], band, capacityKw, 
             tickFormatter={(v) => (mw ? v.toFixed(0) : v.toFixed(1))}
             label={{ value: unit, position: "insideTopLeft", offset: -14, fill: C.axis, fontSize: 10 }} />
           <Tooltip content={<ChartTooltip unit={unit} />} isAnimationActive={false}
-            cursor={{ stroke: "rgba(228,240,236,0.25)", strokeDasharray: "3 3" }} />
+            cursor={{ stroke: "#c3cec8", strokeDasharray: "3 3" }} />
 
-          <Area dataKey="band" stroke="none" fill={C.sun} fillOpacity={0.13} isAnimationActive={false} />
-          <Area dataKey="conf" stroke="none" fill={C.signal} fillOpacity={0.07} isAnimationActive={false} />
+          <Area dataKey="band" stroke="none" fill={C.sun} fillOpacity={0.12} isAnimationActive={false} />
+          <Area dataKey="conf" stroke="none" fill={C.signal} fillOpacity={0.08} isAnimationActive={false} />
           <Line dataKey="scheduled" stroke={C.sun} strokeWidth={1.4} strokeDasharray="5 4"
             dot={false} activeDot={false} isAnimationActive={false} />
           <Area className="fc-predicted" dataKey="predicted" stroke={C.signal} strokeWidth={2.2}
-            fill="url(#fc-fill)" dot={false} activeDot={{ r: 4, fill: C.signal, stroke: "#04080a" }}
+            fill="url(#fc-fill)" dot={false} activeDot={{ r: 4, fill: C.signal, stroke: "#fff", strokeWidth: 2 }}
             animationDuration={1100} />
           <Line dataKey="actual" stroke={C.actual} strokeWidth={1.5} dot={false} isAnimationActive={false} />
           <Line dataKey="breach" stroke="none" dot={<BreachDot />} activeDot={false}
             isAnimationActive={false} legendType="none" />
           {now > first && now < last && (
-            <ReferenceLine x={now} stroke="rgba(228,240,236,0.45)" strokeDasharray="2 4" label={<NowLabel />} />
+            <ReferenceLine x={now} stroke="#9aa8a1" strokeDasharray="2 4" label={<NowLabel />} />
           )}
         </ComposedChart>
       </ResponsiveContainer>
@@ -110,8 +110,8 @@ function BreachDot({ cx, cy, payload }) {
   const high = payload.rec?.severity === "high";
   return (
     <g>
-      <circle cx={cx} cy={cy} r={high ? 6.5 : 5} fill={C.danger} opacity={0.2} />
-      <circle cx={cx} cy={cy} r={2.3} fill={high ? C.danger : C.sun} />
+      <circle cx={cx} cy={cy} r={high ? 6.5 : 5} fill={C.danger} opacity={0.18} />
+      <circle cx={cx} cy={cy} r={2.3} fill={high ? C.danger : "#e9a13b"} />
     </g>
   );
 }
@@ -119,7 +119,7 @@ function BreachDot({ cx, cy, payload }) {
 function NowLabel({ viewBox }) {
   if (!viewBox) return null;
   return (
-    <text x={viewBox.x + 6} y={viewBox.y + 4} fill="#e4f0ec" fontSize={10}
+    <text x={viewBox.x + 6} y={viewBox.y + 4} fill="#48584f" fontSize={10}
       fontFamily="JetBrains Mono, monospace" letterSpacing="0.14em">NOW</text>
   );
 }

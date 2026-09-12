@@ -96,8 +96,18 @@ but its blocks come back unscheduled and uncosted.
 ## GET /api/plants/:id
 As above, plus `"assets": [...]`.
 
+## POST /api/plants/:id/schedule
+Declares the current forecast as the schedule filed with the grid, for every
+block that has not settled yet. Owner roles only. Blocks costed against the old
+schedule have their recommendations cleared, since there is now nothing to
+deviate from.
+```json
+{ "plant_id": 1, "blocks_declared": 285, "window_start": "2026-09-12T11:00:00" }
+```
+Errors: `404` unknown plant, `403` not the owner.
+
 ## GET /api/plants/:id/generation?limit=500
-Ascending by time.
+Ascending by time, summed across the plant's inverters: one figure per block.
 ```json
 [{ "timestamp": "2026-09-11T10:15:00", "ac_power": 38200.4, "dc_power": 38964.4 }]
 ```
@@ -147,6 +157,16 @@ Response:
 }
 ```
 
+## POST /api/diagnostics/run
+Re-scans a plant's inverters for clear-sky shortfalls the weather cannot
+explain, and replaces the alerts the previous scan raised (acknowledged and
+resolved ones are left alone). Owner roles only. Needs a trained model.
+```json
+{ "plant_id": 1, "assets_checked": 10, "alerts": 1 }
+```
+Errors: `400` no `plant_id`, `404` unknown plant, `403` not the owner,
+`503` model not trained.
+
 ## GET /api/alerts?status=open
 Ordered by `est_revenue_loss` descending.
 ```json
@@ -164,7 +184,7 @@ Returns the updated alert. `403` unless the current user owns the alert's plant.
 
 ## POST /api/forecast/run
 Regenerates one plant's next 72 hours of forecast blocks from live Open-Meteo
-weather using the saved model (`python seed.py --train`; this call does not
+weather using the saved model (`python seed.py`; this call does not
 retrain), replaces its future forecasts and recommendations, and re-costs every
 block.
 

@@ -37,19 +37,19 @@ export default function Forecast() {
   const worst = maxBy(blocks.filter((b) => b.rec), (b) => b.rec.exposure_inr);
 
   const stats = [
-    ["Forecast energy", energy(forecastKwh), `next ${horizon} hours`],
-    ["Declared schedule", withSchedule.length ? energy(scheduledKwh) : "—",
-      withSchedule.length ? `${withSchedule.length} blocks on file` : "none on file"],
-    ["Net gap", withSchedule.length ? energy(gapKwh) : "—",
+    ["Electricity forecast", energy(forecastKwh), `next ${horizon} hours`],
+    ["Promised to the grid", withSchedule.length ? energy(scheduledKwh) : "Not filed yet",
+      withSchedule.length ? `${withSchedule.length} blocks scheduled` : "no schedule on file"],
+    ["Short by", withSchedule.length ? energy(gapKwh) : "—",
       scheduledKwh ? `${pct((gapKwh / scheduledKwh) * 100)} of schedule` : ""],
-    ["Peak output", peak ? power(peak.predicted_kw, plant.capacity_kw) : "—",
+    ["Busiest moment", peak ? power(peak.predicted_kw, plant.capacity_kw) : "—",
       peak ? `${dayShort(peak.t)} ${hhmm(peak.t)}` : ""],
   ];
 
   return (
     <div className="page">
-      <PageHeader eyebrow="Forecast" title="Generation outlook"
-        meta="Gradient-boosted trees on forecast weather and calendar features, fed by Open-Meteo on every run."
+      <PageHeader eyebrow="Forecast" title="What you will generate"
+        meta="Predicted from the weather forecast at your plant's coordinates, in the same 15-minute blocks the grid settles on."
         aside={<Segmented id="horizon" options={HORIZONS} value={horizon} onChange={setHorizon} />} />
 
       <Panel title={`Next ${horizon} hours`} meta={`${blocks.length} settlement blocks`}
@@ -67,8 +67,8 @@ export default function Forecast() {
         ))}
       </div>
 
-      <Panel title="Costing sandbox" delay={0.2}
-        meta="The exact arithmetic behind every rupee on this dashboard, computed live by the API. Drag to test it.">
+      <Panel title="Try your own numbers" delay={0.2}
+        meta="Drag the sliders to see how a deviation is charged. The server does the sums, so this is the same arithmetic used everywhere else.">
         <WhatIf key={plant.id} initial={{
           plantType: plant.plant_type,
           scheduled: worst ? Math.round(worst.scheduled_kw * BLOCK_HOURS) : undefined,

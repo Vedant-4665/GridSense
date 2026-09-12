@@ -23,7 +23,7 @@ cd backend
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python seed.py --train          # builds the database from scratch, trains the model
+python seed.py                  # builds the database, trains the model, scans for faults
 python app.py                   # serves on http://localhost:5000
 ```
 
@@ -67,8 +67,10 @@ The session is an HttpOnly cookie; see `docs/api-contract.md`.
 cd backend && python seed.py
 ```
 
-Rebuilds everything from scratch. Do this rather than debugging database state
-under time pressure. It also deletes every registered account.
+Rebuilds everything from scratch: demo accounts, seven days of per-inverter
+history, a trained model, and a deviation scan that finds the seeded soiling
+fault on its own. Do this rather than debugging database state under time
+pressure. It also deletes every registered account.
 
 ---
 
@@ -86,6 +88,7 @@ backend/
     forecaster.py   train, evaluate, predict
     costing.py      deviation exposure arithmetic
     deviation.py    forecast-gap diagnostic
+    diagnostics.py  runs the diagnostic per inverter and raises alerts
     pipeline.py     forecast run: weather -> blocks -> forecasts + costed actions
   ml/features.py    feature engineering
 

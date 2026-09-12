@@ -64,17 +64,17 @@ export default function SunArc() {
         aria-label="Illustration: the sun crosses the sky while 15-minute generation blocks light up beneath it">
         <defs>
           <radialGradient id="sun-glow">
-            <stop offset="0" stopColor="#ffd28a" stopOpacity="0.95" />
-            <stop offset="0.35" stopColor="#ffb547" stopOpacity="0.45" />
-            <stop offset="1" stopColor="#ffb547" stopOpacity="0" />
+            <stop offset="0" stopColor="#f6c66a" stopOpacity="0.95" />
+            <stop offset="0.35" stopColor="#e9a13b" stopOpacity="0.4" />
+            <stop offset="1" stopColor="#e9a13b" stopOpacity="0" />
           </radialGradient>
           <linearGradient id="bar-ok" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#36f1c2" stopOpacity="0.95" />
-            <stop offset="1" stopColor="#36f1c2" stopOpacity="0.12" />
+            <stop offset="0" stopColor="#0f7a58" stopOpacity="0.9" />
+            <stop offset="1" stopColor="#0f7a58" stopOpacity="0.15" />
           </linearGradient>
           <linearGradient id="bar-hot" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#ff5c63" stopOpacity="0.95" />
-            <stop offset="1" stopColor="#ff5c63" stopOpacity="0.15" />
+            <stop offset="0" stopColor="#bd2f26" stopOpacity="0.9" />
+            <stop offset="1" stopColor="#bd2f26" stopOpacity="0.15" />
           </linearGradient>
           <clipPath id="sun-lit">
             <motion.rect x={CX - RX - BAR_W} y="0" height="290" width={lit} />
@@ -82,12 +82,12 @@ export default function SunArc() {
         </defs>
 
         <path d={`M${CX - RX} ${BASE} A ${RX} ${RY} 0 0 1 ${CX + RX} ${BASE}`}
-          fill="none" stroke="rgba(255,181,71,0.3)" strokeDasharray="2 6" />
-        <path d={BAND} fill="rgba(255,181,71,0.09)" stroke="rgba(255,181,71,0.35)" strokeWidth="0.8" />
+          fill="none" stroke="rgba(168,108,5,0.35)" strokeDasharray="2 6" />
+        <path d={BAND} fill="rgba(168,108,5,0.1)" stroke="rgba(168,108,5,0.3)" strokeWidth="0.8" />
 
-        <g opacity="0.16">
+        <g opacity="0.25">
           {BARS.map((b, i) => (
-            <rect key={i} x={b.x - BAR_W / 2} y={BASE - b.h} width={BAR_W} height={b.h} rx="1.5" fill="#6b7f7a" />
+            <rect key={i} x={b.x - BAR_W / 2} y={BASE - b.h} width={BAR_W} height={b.h} rx="1.5" fill="#c3cec8" />
           ))}
         </g>
         <g clipPath="url(#sun-lit)">
@@ -95,17 +95,17 @@ export default function SunArc() {
             <rect key={i} x={b.x - BAR_W / 2} y={BASE - b.h} width={BAR_W} height={b.h} rx="1.5"
               fill={b.breach ? "url(#bar-hot)" : "url(#bar-ok)"} />
           ))}
-          <path d={FORECAST} fill="none" stroke="#36f1c2" strokeWidth="1.8" className="sunarc-forecast" />
+          <path d={FORECAST} fill="none" stroke="#0f7a58" strokeWidth="1.8" className="sunarc-forecast" />
         </g>
 
-        <line x1={CX - RX - 12} x2={CX + RX + 12} y1={BASE} y2={BASE} stroke="rgba(228,240,236,0.25)" />
+        <line x1={CX - RX - 12} x2={CX + RX + 12} y1={BASE} y2={BASE} stroke="#d3ddd7" />
         {[["06:00", CX - RX], ["12:00", CX], ["18:00", CX + RX]].map(([label, x]) => (
           <text key={label} x={x} y={BASE + 20} textAnchor="middle" className="sunarc-label">{label}</text>
         ))}
 
-        <motion.line x1={sx} x2={sx} y1={sy} y2={BASE} stroke="rgba(255,210,138,0.22)" strokeDasharray="2 4" />
+        <motion.line x1={sx} x2={sx} y1={sy} y2={BASE} stroke="rgba(233,161,59,0.35)" strokeDasharray="2 4" />
         <motion.circle cx={sx} cy={sy} r="36" fill="url(#sun-glow)" />
-        <motion.circle cx={sx} cy={sy} r="7" fill="#ffe2b0" />
+        <motion.circle cx={sx} cy={sy} r="7" fill="#e9a13b" />
       </svg>
 
       <div className="sunarc-readout">

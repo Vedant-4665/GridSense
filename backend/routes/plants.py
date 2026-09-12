@@ -1,8 +1,11 @@
+from datetime import datetime
+
 from flask import Blueprint, g, jsonify, request
+from sqlalchemy import func
 
 import config
-from models import OWNER_ROLES, GenerationReading, Plant, get_session
-from routes.auth import visible_plant, visible_plants
+from models import OWNER_ROLES, Forecast, GenerationReading, Plant, Recommendation, get_session
+from routes.auth import can_act_on, visible_plant, visible_plants
 
 bp = Blueprint("plants", __name__, url_prefix="/api/plants")
 
@@ -61,14 +64,52 @@ def generation(plant_id):
     with get_session() as s:
         if not visible_plant(s, plant_id):
             return jsonify({"error": "Plant not found"}), 404
-        rows = (s.query(GenerationReading)
-                 .filter_by(plant_id=plant_id)
+        # Summed across inverters: one plant-level figure per block.
+        rows = (s.query(GenerationReading.timestamp,
+                        func.sum(GenerationReading.ac_power).label("ac_power"),
+                        func.sum(GenerationReading.dc_power).label("dc_power"))
+                 .filter(GenerationReading.plant_id == plant_id)
+                 .group_by(GenerationReading.timestamp)
                  .order_by(GenerationReading.timestamp.desc())
                  .limit(limit).all())
         return jsonify([
-            {"timestamp": r.timestamp.isoformat(), "ac_power": r.ac_power, "dc_power": r.dc_power}
+            {"timestamp": r.timestamp.isoformat(),
+             "ac_power": round(r.ac_power, 2) if r.ac_power is not None else None,
+             "dc_power": round(r.dc_power, 2) if r.dc_power is not None else None}
             for r in reversed(rows)
         ])
+
+
+@bp.post("/<int:plant_id>/schedule")
+def declare_schedule(plant_id):
+    """
+    Declare the current forecast as the schedule filed with the grid. Blocks
+    that have already settled keep whatever was declared for them.
+    """
+    with get_session() as s:
+        plant = visible_plant(s, plant_id)
+        if not plant:
+            return jsonify({"error": "Plant not found"}), 404
+        if not can_act_on(plant):
+            return jsonify({"error": "Only the plant's owner can declare its schedule"}), 403
+
+        since = datetime.now()
+        blocks = (s.query(Forecast)
+                   .filter(Forecast.plant_id == plant_id, Forecast.target_timestamp > since)
+                   .order_by(Forecast.target_timestamp).all())
+        for block in blocks:
+            block.scheduled_kw = block.predicted_kw
+        # Declaring the forecast as the schedule leaves nothing to deviate from,
+        # so actions costed against the old schedule no longer apply.
+        (s.query(Recommendation)
+          .filter(Recommendation.plant_id == plant_id, Recommendation.window_start > since)
+          .delete(synchronize_session=False))
+        s.commit()
+        return jsonify({
+            "plant_id": plant_id,
+            "blocks_declared": len(blocks),
+            "window_start": blocks[0].target_timestamp.isoformat() if blocks else None,
+        })
 
 
 def _invalid(p: Plant):

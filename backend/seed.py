@@ -1,9 +1,9 @@
 """
 Rebuild the database from scratch. One command, always.
 
-    python seed.py            # demo data only
-    python seed.py --csv      # load real CSVs from ../data/raw/
-    python seed.py --train    # then train the forecast model on what was loaded
+    python seed.py              # demo data + trained model + deviation scan
+    python seed.py --csv        # also load real CSVs from ../data/raw/
+    python seed.py --no-train   # skip training (asset health stays empty)
 
 When the database gets into a bad state at 3am, run this rather than debugging it.
 """
@@ -17,13 +17,19 @@ from werkzeug.security import generate_password_hash
 
 import config
 from models import (
-    ROLES, Asset, DeviationAlert, Forecast, GenerationReading, Plant,
-    Recommendation, User, WeatherReading, Base, engine, get_session, init_db,
-    new_session_token,
+    ROLES, Asset, Forecast, GenerationReading, Plant, Recommendation, User,
+    WeatherReading, Base, engine, get_session, init_db, new_session_token,
 )
-from services import forecaster, pipeline
+from services import diagnostics, forecaster, pipeline
 
 random.seed(42)
+
+INVERTERS = 10
+# One inverter has been losing output to soiling for the last few days. Nothing
+# here writes an alert: the diagnostic has to find this on its own.
+SOILED_INVERTER = 3
+SOILING_DAYS = 4
+SOILING_LOSS = 0.12
 
 
 def reset():
@@ -65,6 +71,7 @@ def seed_demo():
             name="Ahmedabad Solar Park", location="Gujarat, India",
             latitude=23.0225, longitude=72.5714, capacity_kw=50000,
             plant_type="solar", owner_type="utility", owner_id=demo["utility"].id,
+            tariff_rate=3.0,          # typical utility-scale PPA rate, Rs/kWh
         )
         rooftop = Plant(
             name="Rooftop 3kW (demo)", location="Ahmedabad, India",
@@ -77,37 +84,46 @@ def seed_demo():
 
         assets = [
             Asset(plant_id=utility.id, source_key=f"INV-{i:02d}",
-                  asset_name=f"Inverter {i}", capacity_kw=5000,
-                  status="alert" if i == 3 else "healthy")
-            for i in range(1, 11)
+                  asset_name=f"Inverter {i}", capacity_kw=utility.capacity_kw / INVERTERS,
+                  status="healthy")
+            for i in range(1, INVERTERS + 1)
         ]
         s.add_all(assets)
         s.flush()
 
         now = datetime.now().replace(minute=0, second=0, microsecond=0)
         start = now - timedelta(days=7)
+        soiling_from = now - timedelta(days=SOILING_DAYS)
 
-        # --- history: 7 days of 15-minute readings -------------------------
+        # --- history: 7 days of 15-minute readings, per inverter -------------
         t = start
         while t < now:
             hour = t.hour + t.minute / 60
             clear = solar_curve(hour, utility.capacity_kw)
             weather_factor = 1.0 if t.day % 3 else 0.72     # cloudy every third day
-            actual = clear * weather_factor * random.uniform(0.95, 1.03)
+            plant_output = clear * weather_factor * random.uniform(0.95, 1.03)
+            per_inverter = plant_output / INVERTERS
 
-            s.add(GenerationReading(plant_id=utility.id, timestamp=t,
-                                    ac_power=actual, dc_power=actual * 1.02))
+            for asset in assets:
+                output = per_inverter
+                if asset.asset_name.endswith(f" {SOILED_INVERTER}") and t >= soiling_from:
+                    output *= 1 - SOILING_LOSS
+                s.add(GenerationReading(plant_id=utility.id, asset_id=asset.id, timestamp=t,
+                                        ac_power=output, dc_power=output * 1.02))
+
             s.add(WeatherReading(
                 plant_id=utility.id, timestamp=t,
                 ambient_temp=26 + 8 * math.sin(math.pi * hour / 24),
                 module_temp=30 + 14 * math.sin(math.pi * hour / 24),
-                irradiation=clear / utility.capacity_kw,
+                # Measured irradiance, so clouds are already in it: the same
+                # thing the weather API returns for a forecast.
+                irradiation=clear * weather_factor / utility.capacity_kw,
                 cloud_cover=(1 - weather_factor) * 100, wind_speed=3.4,
                 source="sensor",
             ))
             t += timedelta(minutes=config.BLOCK_MINUTES)
 
-        # --- forward forecast: 72 hours ------------------------------------
+        # --- forward forecast: 72 hours --------------------------------------
         t = now
         while t < now + timedelta(hours=72):
             hour = t.hour + t.minute / 60
@@ -131,34 +147,38 @@ def seed_demo():
                     s.add(rec)
             t += timedelta(minutes=config.BLOCK_MINUTES)
 
-        # --- one seeded deviation alert on inverter 3 ----------------------
-        s.add(DeviationAlert(
-            asset_id=assets[2].id,
-            window_start=now - timedelta(days=4), window_end=now,
-            deviation_pct=12.4, suspected_cause="soiling", severity="medium",
-            est_loss_kwh=4820, est_revenue_loss=14460, status="open",
-        ))
-
         s.commit()
         print(f"Seeded {s.query(User).count()} demo accounts, "
-              f"{s.query(GenerationReading).count()} generation readings, "
+              f"{s.query(GenerationReading).count()} generation readings across {INVERTERS} inverters, "
               f"{s.query(Forecast).count()} forecast blocks, "
               f"{s.query(Recommendation).count()} recommendations.")
 
 
 def train_model():
     frame = pipeline.training_frame()
-    _, m = forecaster.train(frame)
+    model, m = forecaster.train(frame)
     print(f"Model trained on {len(frame)} blocks, saved to {config.MODEL_PATH.relative_to(config.BASE_DIR)}.")
     print(f"Held-out MAE {m['mae']:,.1f} kW vs day-ahead persistence baseline "
           f"{m['baseline_mae']:,.1f} kW: {m['improvement_pct']}% improvement "
           f"over {m['test_blocks']} blocks.")
+    return model
+
+
+def scan_for_deviations(model):
+    """Find soiling and degradation in the seeded history, the same way production would."""
+    with get_session() as s:
+        found = sum(diagnostics.run(s, plant, model)["alerts"] for plant in s.query(Plant).all())
+        s.commit()
+    print(f"Deviation scan: {found} alert(s) raised from forecast-vs-actual gaps.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", action="store_true", help="load real CSVs from data/raw/")
-    parser.add_argument("--train", action="store_true", help="train and save the forecast model")
+    parser.add_argument("--train", action="store_true", help=argparse.SUPPRESS)  # now the default
+    parser.add_argument("--no-train", dest="train", action="store_false",
+                        help="skip model training and the deviation scan")
+    parser.set_defaults(train=True)
     args = parser.parse_args()
 
     reset()
@@ -166,5 +186,5 @@ if __name__ == "__main__":
     if args.csv:
         print("TODO(hackathon): wire services.ingest.load_generation_csv here.")
     if args.train:
-        train_model()
+        scan_for_deviations(train_model())
     print("Done. Start the API with: python app.py")

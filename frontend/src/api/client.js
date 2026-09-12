@@ -41,6 +41,8 @@ export const api = {
   forecast: (id, horizon = 24) => request(`/api/plants/${id}/forecast?horizon=${horizon}`),
   recommendations: (id) => request(`/api/plants/${id}/recommendations`),
   runForecast: (plantId) => request("/api/forecast/run", post({ plant_id: plantId })),
+  declareSchedule: (plantId) => request(`/api/plants/${plantId}/schedule`, { method: "POST" }),
+  runDiagnostic: (plantId) => request("/api/diagnostics/run", post({ plant_id: plantId })),
   alerts: (status) => request(status ? `/api/alerts?status=${status}` : "/api/alerts"),
   updateAlert: (id, status) =>
     request(`/api/alerts/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),

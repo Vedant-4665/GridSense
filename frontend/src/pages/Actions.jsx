@@ -47,14 +47,15 @@ export default function Actions() {
       <PageHeader eyebrow="Grid actions"
         title={<><CountUp value={sum(breached, (b) => b.rec.exposure_inr)} format={rupeesShort} />{" "}
           <span className="title-dim">at stake over 72 hours</span></>}
-        meta={`${breached.length} blocks breach the ±${band ?? "…"}% band · ${under} under, ${breached.length - under} over · ranked by rupees, not severity labels`} />
+        meta={`${breached.length} blocks fall outside your ±${band ?? "…"}% tolerance band: ${under} where you generate too little, ${breached.length - under} too much. Ranked by cost, not by severity label.`} />
 
-      <Panel title="Settlement runway" meta="Click any block to open its costing" delay={0.05}>
+      <Panel title="Every 15 minutes, for three days" delay={0.05}
+        meta="Electricity is settled in 15-minute blocks. Each square is one block: green is fine, warmer colours cost more. Click one.">
         <Runway blocks={blocks} capacityKw={plant.capacity_kw} selected={selectedTs} onSelect={select} />
       </Panel>
 
       <div className="split split-wide">
-        <Panel title="Ranked actions" delay={0.1}
+        <Panel title="Ranked by what they cost you" delay={0.1}
           actions={<Segmented id="direction" value={direction} onChange={setDirection}
             options={[["all", "All"], ["under", "Under"], ["over", "Over"]]} />}>
           {shown.length ? (
@@ -73,7 +74,7 @@ export default function Actions() {
           )}
         </Panel>
 
-        <Panel title="Block anatomy" className="sticky" delay={0.15}
+        <Panel title="Where this number comes from" className="sticky" delay={0.15}
           meta={selected ? `${dayLong(selected.t)} · ${hhmm(selected.t)}–${hhmm(selected.t + BLOCK_MS)}` : ""}>
           {selected ? <BlockAnatomy block={selected} plantType={plant.plant_type} /> : <p className="muted">Select a block.</p>}
         </Panel>
