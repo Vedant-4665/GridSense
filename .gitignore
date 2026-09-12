@@ -27,3 +27,4 @@ backend/ml/*.pkl
 Thumbs.db
 .idea/
 .vscode/
+backend/ml/model_card.json
